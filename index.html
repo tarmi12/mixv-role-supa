@@ -5,7 +5,6 @@
   <title>Tiger Cashbox - Management Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     @media screen {
@@ -44,7 +43,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 antialiased text-base">
 
-  <!-- Modal ล็อกอิน Supabase Auth -->
+  <!-- Modal ล็อกอิน -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-slate-800">
       <div class="text-center mb-6">
@@ -58,7 +57,7 @@
       <div class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">อีเมลผู้ใช้งาน</label>
-          <input type="email" id="auth_email" placeholder="owner@tiger.local หรือ staff@tiger.local" class="w-full bg-slate-50 border border-slate-300 p-3 rounded-xl text-sm font-bold focus:outline-none focus:border-amber-600">
+          <input type="email" id="auth_email" placeholder="tar@udrecycle.vip" class="w-full bg-slate-50 border border-slate-300 p-3 rounded-xl text-sm font-bold focus:outline-none focus:border-amber-600">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน</label>
@@ -71,7 +70,7 @@
     </div>
   </div>
 
-  <!-- Modal ยืนยัน PIN สำหรับการออก Voucher ตรงของ Owner -->
+  <!-- Modal ยืนยัน PIN สำหรับ Owner Direct -->
   <div id="pin-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xs w-full p-6 text-slate-800 text-center">
       <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
@@ -89,10 +88,9 @@
     </div>
   </div>
 
-  <!-- แอปรองรับทั้ง Owner และ Staff -->
+  <!-- Main App Screen -->
   <div id="app-screen" class="max-w-5xl mx-auto py-8 px-4 sm:px-6 hidden">
 
-    <!-- Header สลับสีตาม Role -->
     <header id="main-header" class="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div class="flex items-center gap-4">
         <div id="role-badge-icon" class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white text-2xl shadow-md">
@@ -116,7 +114,6 @@
 
     <!-- Navigation Tabs -->
     <div class="flex border-b border-slate-300 gap-2 mb-8 overflow-x-auto pb-1" id="tab-bar">
-      <!-- แท็บพื้นฐานของ Staff -->
       <button type="button" onclick="switchTab('combine')" id="tab-combine" class="tab-btn px-5 py-3 font-black text-base border-b-4 border-amber-500 text-amber-700 transition whitespace-nowrap">
         1. รวมยอดคูปอง
       </button>
@@ -126,8 +123,6 @@
       <button type="button" onclick="switchTab('history')" id="tab-history" class="tab-btn px-5 py-3 font-bold text-base border-b-4 border-transparent text-slate-500 hover:text-slate-900 transition whitespace-nowrap">
         3. ประวัติ & พิมพ์ซ้ำ
       </button>
-
-      <!-- แท็บพิเศษของ Owner (ซ่อนอัตโนมัติถ้าเป็น Staff) -->
       <button type="button" onclick="switchTab('direct')" id="tab-direct" class="owner-only hidden tab-btn px-5 py-3 font-bold text-base border-b-4 border-transparent text-rose-600 hover:text-rose-800 transition whitespace-nowrap">
         ⚡ สร้าง Voucher ตรง (เจ้าของ)
       </button>
@@ -136,7 +131,7 @@
       </button>
     </div>
 
-    <!-- VIEW 1: รวมยอดคูปอง (สไตล์พนักงาน: ตัวหนังสือชัดเจน) -->
+    <!-- VIEW 1: รวมยอดคูปอง -->
     <div id="view-combine" class="tab-content bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
       <div class="border-b border-slate-100 pb-4 mb-6">
         <h2 class="text-xl font-black text-slate-900">รวมยอดคูปองเดิมตั้งแต่ 2 ใบขึ้นไป</h2>
@@ -166,7 +161,7 @@
       </div>
     </div>
 
-    <!-- VIEW 2: ยกเลิกเดี่ยว (VOID) -->
+    <!-- VIEW 2: ยกเลิกเดี่ยว -->
     <div id="view-cancel" class="tab-content bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hidden">
       <div class="border-b border-slate-100 pb-4 mb-6">
         <h2 class="text-xl font-black text-rose-600">ยกเลิกคูปองเดี่ยว (VOID)</h2>
@@ -188,7 +183,7 @@
       </div>
     </div>
 
-    <!-- VIEW 3: ประวัติ & Reprint พร้อม Pagination -->
+    <!-- VIEW 3: ประวัติ & Reprint -->
     <div id="view-history" class="tab-content bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hidden">
       <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
         <div>
@@ -228,7 +223,7 @@
       </div>
     </div>
 
-    <!-- VIEW 4 (OWNER): สร้าง Voucher ตรง (ไม่ต้องมีบิลยกเลิก + Trigger **1 + PIN 1234) -->
+    <!-- VIEW 4 (OWNER): สร้าง Voucher ตรง -->
     <div id="view-direct" class="tab-content bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hidden">
       <div class="border-b border-rose-100 pb-4 mb-6">
         <div class="flex items-center gap-2">
@@ -256,7 +251,7 @@
       </div>
     </div>
 
-    <!-- VIEW 5 (OWNER): Owner Reissue (มีคูปองเดิม) -->
+    <!-- VIEW 5 (OWNER): Reissue พิเศษ -->
     <div id="view-reissue" class="tab-content bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hidden">
       <div class="border-b border-purple-100 pb-4 mb-6">
         <div class="flex items-center gap-2">
@@ -291,11 +286,10 @@
 
   </div>
 
-  <!-- Isolated Container สำหรับสั่งพิมพ์บนกระดาษความร้อน -->
   <div id="print-area"></div>
 
   <script>
-  const SUPABASE_URL = "https://iyphacvzubqixmiztmde.supabase.co";
+    const SUPABASE_URL = "https://iyphacvzubqixmiztmde.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5cGhhY3Z6dWJxaXhtaXp0bWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzIxNjIsImV4cCI6MjEwNTMwODE2Mn0.ILKxdBwFloEJZb2BQpHkiwBUWEyOPA8bZeq1qkWNGPM";
     const EDGE_FUNCTION_URL = "https://iyphacvzubqixmiztmde.supabase.co/functions/v1/tiger-api";
 
@@ -303,7 +297,6 @@
     let currentProfile = null;
     let pendingDirectAmount = 0;
 
-    // Pagination สำหรับหน้าประวัติ
     let historyAllData = [];
     let currentHistoryPage = 1;
     const itemsPerPage = 20;
@@ -320,7 +313,6 @@
       try {
         currentSession = JSON.parse(savedSession);
 
-        // ดึงข้อมูลโปรไฟล์ผ่าน REST API ตรงๆ
         const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${currentSession.user.id}&select=*`, {
           headers: {
             "apikey": SUPABASE_ANON_KEY,
@@ -341,7 +333,7 @@
         document.getElementById("auth-modal").classList.add("hidden");
         document.getElementById("app-screen").classList.remove("hidden");
       } catch (err) {
-        console.error("Session Expired or Error:", err);
+        console.error("Session Error:", err);
         await handleLogout();
       }
     }
@@ -375,7 +367,6 @@
         currentSession = authData;
         localStorage.setItem("tiger_session", JSON.stringify(authData));
 
-        // ดึงข้อมูล Profile
         const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`, {
           headers: {
             "apikey": SUPABASE_ANON_KEY,
@@ -407,7 +398,6 @@
       location.reload();
     }
 
-    // ปรับหน้าจอตาม Role (Owner vs Staff)
     function setupRoleView(profile) {
       document.getElementById("current-user-name").innerText = `${profile.display_name} (${profile.role.toUpperCase()})`;
 
@@ -422,7 +412,6 @@
         headerBadge.innerText = "Owner Portal";
         headerDesc.innerText = "ระบบบริหารและควบคุมคูปองเงินสดอัตโนมัติ (ระดับเจ้าของร้าน)";
 
-        // แสดงแท็บพิเศษของเจ้าของร้าน
         document.querySelectorAll(".owner-only").forEach(el => el.classList.remove("hidden"));
         switchTab("combine");
       } else {
@@ -434,33 +423,6 @@
         document.querySelectorAll(".owner-only").forEach(el => el.classList.add("hidden"));
         switchTab("combine");
       }
-    }
-
-    async function handleAuthLogin() {
-      const email = document.getElementById("auth_email").value.trim();
-      const password = document.getElementById("auth_password").value.trim();
-      const btn = document.getElementById("btn-auth-login");
-
-      if (!email || !password) return alert("กรุณากรอกอีเมลและรหัสผ่าน");
-
-      btn.disabled = true;
-      btn.innerText = "กำลังตรวจสอบ...";
-
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        initAuth();
-      } catch (err) {
-        alert("เข้าสู่ระบบไม่สำเร็จ: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "เข้าสู่ระบบ";
-      }
-    }
-
-    async function handleLogout() {
-      await supabase.auth.signOut();
-      location.reload();
     }
 
     function cleanVoucherInput(el) {
@@ -530,9 +492,7 @@
       return await response.json();
     }
 
-    // ==========================================
-    // 1. รวมยอดคูปอง (Combine)
-    // ==========================================
+    // 1. รวมยอดคูปอง
     async function processCombine() {
       const staff = currentProfile.display_name;
       const ref = document.getElementById('combine_ref').value.trim();
@@ -615,9 +575,7 @@
       }
     }
 
-    // ==========================================
-    // 2. ยกเลิกเดี่ยว (Cancel)
-    // ==========================================
+    // 2. ยกเลิกเดี่ยว
     async function processCancel() {
       const staff = currentProfile.display_name;
       const code = document.getElementById('cancel_code').value.trim().replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
@@ -662,9 +620,7 @@
       }
     }
 
-    // ==========================================
-    // 3. OWNER: สร้าง Voucher ตรง (+ **1 & PIN)
-    // ==========================================
+    // 3. OWNER: ออกยอดตรง (+ **1 & PIN)
     const directAmtInput = document.getElementById('direct_amount_input');
     directAmtInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
@@ -695,7 +651,6 @@
       document.getElementById('pin-modal').classList.add('hidden');
     }
 
-    // กด Enter ในช่อง PIN
     document.getElementById('owner_pin_input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         confirmOwnerDirectVoucher();
@@ -740,7 +695,6 @@
           error_message: note
         });
 
-        // พิมพ์สลิป Voucher ตรง
         renderAndPrintDirectSlip({
           txId,
           dateStr: new Date().toLocaleString('th-TH'),
@@ -760,9 +714,7 @@
       }
     }
 
-    // ==========================================
-    // 4. OWNER: Reissue พิเศษ (อ้างอิงของเดิม)
-    // ==========================================
+    // 4. OWNER: Reissue พิเศษ
     const reissueAmtInput = document.getElementById('reissue_amount_input');
     reissueAmtInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
@@ -839,9 +791,7 @@
       }
     }
 
-    // ==========================================
-    // 5. ประวัติ & พิมพ์ซ้ำ (Pagination)
-    // ==========================================
+    // 5. ประวัติ & พิมพ์ซ้ำ
     async function loadHistory() {
       const tbody = document.getElementById('history-rows');
       const pag = document.getElementById('history-pagination');
@@ -970,9 +920,7 @@
       }
     }
 
-    // ==========================================
-    // เครื่องมือพิมพ์ผ่าน Frame (ตัดกระดาษจริง 2 ท่อน)
-    // ==========================================
+    // ฟังก์ชันพิมพ์ผ่าน iframe ตัดกระดาษ 2 ท่อน
     function printHtmlViaFrame(htmlContent, callback) {
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
@@ -1039,7 +987,6 @@
       }
     }
 
-    // สลิปรวมยอด: พิมพ์แยก 2 ใบตัดกระดาษตรงกลาง
     function renderAndPrintCombineSlip(data) {
       const formattedCode = data.newCode ? data.newCode.replace(/(\d{4})/g, '$1 ').trim() : '';
 
@@ -1057,7 +1004,6 @@
         </div>
       `).join('');
 
-      // ใบที่ 1: ลูกค้า
       const part1Html = `
         <div class="thermal-doc">
           ${data.isReprint ? `<div style="text-align:center; font-weight:bold; border:2px solid #000; padding:2px; margin-bottom:5px; font-size:13px;">*** REPRINT SLIP (${data.reprintBy}) ***</div>` : ''}
@@ -1079,7 +1025,6 @@
         </div>
       `;
 
-      // ใบที่ 2: ร้านค้า
       const part2Html = `
         <div class="thermal-doc">
           ${data.isReprint ? `<div style="text-align:center; font-weight:bold; border:2px solid #000; padding:2px; margin-bottom:5px; font-size:12px;">*** REPRINT SLIP (${data.reprintBy}) ***</div>` : ''}
@@ -1108,7 +1053,6 @@
       });
     }
 
-    // สลิปยกเลิกเดี่ยว
     function renderAndPrintVoidSlip(data) {
       const voidHtml = `
         <div class="thermal-doc" style="text-align:center;">
@@ -1129,7 +1073,6 @@
       printHtmlViaFrame(voidHtml);
     }
 
-    // สลิปสร้าง Voucher ตรง (Owner Direct)
     function renderAndPrintDirectSlip(data) {
       const formattedCode = data.newCode ? data.newCode.replace(/(\d{4})/g, '$1 ').trim() : '';
       const html = `
@@ -1159,7 +1102,6 @@
       printHtmlViaFrame(html);
     }
 
-    // สลิป Owner Reissue
     function renderAndPrintReissueSlip(data) {
       const formattedCode = data.newCode ? data.newCode.replace(/(\d{4})/g, '$1 ').trim() : '';
       const html = `
@@ -1189,7 +1131,6 @@
       printHtmlViaFrame(html);
     }
 
-    // เริ่มต้นเช็คสิทธิ์อัตโนมัติ
     initAuth();
   </script>
 </body>
