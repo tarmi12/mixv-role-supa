@@ -295,11 +295,9 @@
   <div id="print-area"></div>
 
   <script>
-    const SUPABASE_URL = "https://iyphacvzubqixmiztmde.supabase.co";
+   const SUPABASE_URL = "https://iyphacvzubqixmiztmde.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5cGhhY3Z6dWJxaXhtaXp0bWRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzIxNjIsImV4cCI6MjEwNTMwODE2Mn0.ILKxdBwFloEJZb2BQpHkiwBUWEyOPA8bZeq1qkWNGPM";
     const EDGE_FUNCTION_URL = "https://iyphacvzubqixmiztmde.supabase.co/functions/v1/tiger-api";
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentSession = null;
     let currentProfile = null;
@@ -310,35 +308,103 @@
     let currentHistoryPage = 1;
     const itemsPerPage = 20;
 
-    // ตรวจสอบการ Login
+    // ตรวจสอบการ Login จาก localStorage
     async function initAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const savedSession = localStorage.getItem("tiger_session");
+      if (!savedSession) {
         document.getElementById("auth-modal").classList.remove("hidden");
         document.getElementById("app-screen").classList.add("hidden");
         return;
       }
 
-      currentSession = session;
+      try {
+        currentSession = JSON.parse(savedSession);
 
-      // ดึง Profile
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role, display_name, pin_code")
-        .eq("id", session.user.id)
-        .single();
+        // ดึงข้อมูลโปรไฟล์ผ่าน REST API ตรงๆ
+        const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${currentSession.user.id}&select=*`, {
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${currentSession.access_token}`
+          }
+        });
 
-      if (error || !profile) {
-        alert("ไม่พบข้อมูลโปรไฟล์ผู้ใช้งาน");
+        const profiles = await profRes.json();
+        if (!profiles || profiles.length === 0) {
+          alert("ไม่พบข้อมูลโปรไฟล์ในตาราง profiles");
+          await handleLogout();
+          return;
+        }
+
+        currentProfile = profiles[0];
+        setupRoleView(currentProfile);
+
+        document.getElementById("auth-modal").classList.add("hidden");
+        document.getElementById("app-screen").classList.remove("hidden");
+      } catch (err) {
+        console.error("Session Expired or Error:", err);
         await handleLogout();
-        return;
       }
+    }
 
-      currentProfile = profile;
-      setupRoleView(profile);
+    // ฟังก์ชัน Login ตรงผ่าน Supabase Auth API
+    async function handleAuthLogin() {
+      const email = document.getElementById("auth_email").value.trim();
+      const password = document.getElementById("auth_password").value.trim();
+      const btn = document.getElementById("btn-auth-login");
 
-      document.getElementById("auth-modal").classList.add("hidden");
-      document.getElementById("app-screen").classList.remove("hidden");
+      if (!email || !password) return alert("กรุณากรอกอีเมลและรหัสผ่าน");
+
+      btn.disabled = true;
+      btn.innerText = "กำลังตรวจสอบ...";
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const authData = await res.json();
+        if (!res.ok) {
+          throw new Error(authData.error_description || authData.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        }
+
+        currentSession = authData;
+        localStorage.setItem("tiger_session", JSON.stringify(authData));
+
+        // ดึงข้อมูล Profile
+        const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${authData.user.id}&select=*`, {
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${authData.access_token}`
+          }
+        });
+
+        const profiles = await profRes.json();
+        if (!profiles || profiles.length === 0) {
+          throw new Error("ล็อกอินผ่านแล้ว แต่ไม่พบแถวข้อมูลในตาราง profiles");
+        }
+
+        currentProfile = profiles[0];
+        setupRoleView(currentProfile);
+
+        document.getElementById("auth-modal").classList.add("hidden");
+        document.getElementById("app-screen").classList.remove("hidden");
+
+      } catch (err) {
+        alert("เข้าสู่ระบบไม่สำเร็จ: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "เข้าสู่ระบบ";
+      }
+    }
+
+    async function handleLogout() {
+      localStorage.removeItem("tiger_session");
+      location.reload();
     }
 
     // ปรับหน้าจอตาม Role (Owner vs Staff)
