@@ -11,7 +11,6 @@
   <style>
     * { font-family: 'Prompt', sans-serif; }
     
-    /* สไตล์สำหรับเครื่องพิมพ์ความร้อน 80mm ให้ตัวหนังสือหนา ดำสนิท คมชัดตรงตามสลิปจริง */
     @media print {
       body * { visibility: hidden; }
       #thermal-slip, #thermal-slip * { visibility: visible; }
@@ -85,14 +84,14 @@
     <!-- Main Content -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ (สแกน QR แล้วออกใหม่ทันที) ================= -->
+      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ ================= -->
       <section id="func-reissue" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
             <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-lg">⚡</span>
             <div>
               <h2 class="text-lg font-bold text-slate-900">1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue)</h2>
-              <p class="text-xs text-slate-500">สแกนรหัสคูปองเดิม เพื่อยกเลิกและสร้าง QR Voucher ใหม่ทันที</p>
+              <p class="text-xs text-slate-500">สแกนรหัสคูปองเดิม เพื่อยกเลิกและสร้าง QR Voucher ใหม่จากระบบ Tiger ทันที</p>
             </div>
           </div>
           <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded font-medium">Quick Action</span>
@@ -115,7 +114,6 @@
           </div>
         </div>
 
-        <!-- กล่องแสดงข้อมูลคูปองเดิมที่พร้อมทำรายการ -->
         <div id="box-reissue-preview" class="hidden mt-4 p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-xl flex items-center justify-between text-sm">
           <div>
             <span class="text-slate-500 font-medium">คูปองเดิม:</span>
@@ -167,14 +165,14 @@
       <!-- Grid แบ่ง 2 ฝั่งสำหรับ ฟังก์ชัน 4 และ 3 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- ================= FUNCTION 4: รวมบิลและสร้าง (Combine) ================= -->
+        <!-- ================= FUNCTION 4: รวมบิลและสร้าง ================= -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center space-x-2 mb-3">
               <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-base">🔄</span>
               <h2 class="text-lg font-bold text-slate-900">4. รวมบิลและสร้าง (Combine Vouchers)</h2>
             </div>
-            <p class="text-xs text-slate-500 mb-4">สแกนรหัสคูปองเก่าหลายๆ ใบ เพื่อยกเลิกและรวมยอดเป็น 1 ใบใหม่</p>
+            <p class="text-xs text-slate-500 mb-4">สแกนรหัสคูปองเก่าหลายๆ ใบ เพื่อยกเลิกและรวมยอดเป็น 1 ใบใหม่จากระบบ Tiger</p>
             <div class="space-y-3">
               <div class="flex gap-2">
                 <input type="text" id="input-combine-code" placeholder="สแกนหรือพิมพ์เลขคูปอง" class="flex-1 px-3 py-2 border rounded-lg uppercase tracking-wider text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
@@ -194,7 +192,7 @@
           </button>
         </div>
 
-        <!-- ================= FUNCTION 3: ยกเลิกรายการ (Cancel Single) ================= -->
+        <!-- ================= FUNCTION 3: ยกเลิกรายการ ================= -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center space-x-2 mb-3">
@@ -221,7 +219,7 @@
 
       </div>
 
-      <!-- ================= FUNCTION 5: หน้ารายงาน (Transaction Report) ================= -->
+      <!-- ================= FUNCTION 5: หน้ารายงาน ================= -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center space-x-2">
@@ -238,7 +236,7 @@
                 <th class="px-6 py-3">ประเภท</th>
                 <th class="px-6 py-3">ผู้ทำรายการ</th>
                 <th class="px-6 py-3">มูลค่า (บาท)</th>
-                <th class="px-6 py-3">เลขคูปองใหม่</th>
+                <th class="px-6 py-3">เลขที่ Tiger Voucher</th>
                 <th class="px-6 py-3 text-right">การจัดการ</th>
               </tr>
             </thead>
@@ -257,7 +255,7 @@
   <!-- ================= PRINTABLE THERMAL SLIP CONTAINER (80MM EXACT REAL FORMAT) ================= -->
   <div id="thermal-slip" class="hidden text-black font-sans leading-tight">
     
-    <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า (ตรงตามสลิปจริง) -->
+    <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า -->
     <div class="slip-segment text-left">
       <div class="border border-black py-1 text-center font-bold text-[13px] tracking-wide mb-1">
         *** <span id="slip-header-badge1">REPRINT SLIP</span> (<span id="slip-staff-id1">Staff-01</span>) ***
@@ -307,7 +305,7 @@
         ยอดเงินสร้างใหม่: <span id="slip-amount2">0.00 บาท</span>
       </div>
 
-      <!-- รหัสตัวเลขจัดกลุ่ม 4 หลัก ให้อ่านง่าย -->
+      <!-- รหัสตัวเลข Voucher แท้จากระบบ Tiger (จัดกลุ่ม 4 หลัก เช่น 3934 1185 8041) -->
       <div id="slip-code-formatted" class="text-xl font-black font-mono tracking-widest my-2"></div>
 
       <!-- คอนเทนเนอร์ QR Code คมชัด สำหรับสแกนตู้จ่ายเงิน -->
@@ -355,9 +353,26 @@
       return json;
     }
 
+    // Helper: สกัดเลข Voucher จริงจาก Tiger API Response
+    function extractTigerVoucherCode(createRes) {
+      const code = createRes?.voucher_number || 
+                   createRes?.voucher_no || 
+                   createRes?.voucher_code || 
+                   createRes?.data?.voucher_number || 
+                   createRes?.data?.voucher_no || 
+                   createRes?.data?.voucher_code || 
+                   createRes?.data?.qr_data ||
+                   createRes?.data?.qr_code;
+      if (!code) {
+        throw new Error("ระบบ Tiger ไม่ได้ส่งเลข Voucher กลับมา กรุณาตรวจสอบการเชื่อมต่อกับตู้จ่ายเงิน");
+      }
+      return String(code).trim();
+    }
+
+    // Helper: จัดกลุ่มตัวเลข 4 หลัก เช่น 3934 1185 8041
     function formatCodeInGroups(code) {
       if (!code) return "";
-      const cleaned = code.replace(/\s+/g, '');
+      const cleaned = String(code).replace(/\s+/g, '');
       return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
     }
 
@@ -477,38 +492,39 @@
       btnReissueSubmit.disabled = true;
 
       try {
-        // ยกเลิกบิลเดิม
+        // 1. ยกเลิกบิลเดิม
         await callEdgeFunction("cancel", { voucher_num: code });
 
-        // สร้างใบใหม่
+        // 2. ขอสร้าง Voucher ใหม่จากตู้ Tiger
         const createRes = await callEdgeFunction("create", {
           amount: amount,
           ref_num: txId,
           note: `Reissued from: ${code}`
         });
 
-        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V" + Date.now();
+        // สกัดรหัส Voucher จริงจาก Tiger (เช่น 3934 1185 8041)
+        const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
-        // บันทึกลงฐานข้อมูล
+        // 3. บันทึกลงฐานข้อมูล Supabase
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "REISSUE",
           staff_name: state.profile.display_name,
           total_amount: amount,
-          new_voucher_code: newVoucherCode,
+          new_voucher_code: realTigerVoucherCode,
           old_vouchers: [code],
-          ref_num: `${code} -> ${newVoucherCode}`
+          ref_num: `${code} -> ${realTigerVoucherCode}`
         });
 
-        alert("ยกเลิกและออกคูปองใหม่สำเร็จ! เลขที่: " + newVoucherCode);
+        alert("ยกเลิกและออกคูปองใหม่สำเร็จ! เลขที่: " + realTigerVoucherCode);
 
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินยกยอดคูปอง",
           staff: state.profile.display_name,
           amount: amount,
-          newCode: newVoucherCode,
-          olds: [{ desc: `บิลที่ 1: ${code}`, amount: amount }]
+          voucherCode: realTigerVoucherCode,
+          olds: [{ desc: `บิลที่ 1:`, code: code, amount: amount }]
         });
 
         inputReissue.value = "";
@@ -543,24 +559,25 @@
           tag: "**1"
         });
 
-        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V-" + Date.now();
+        // สกัดรหัส Voucher จริงจาก Tiger
+        const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "OWNER_DIRECT",
           staff_name: `${state.profile.display_name} (**1)`,
           total_amount: amount,
-          new_voucher_code: newVoucherCode,
+          new_voucher_code: realTigerVoucherCode,
           ref_num: ownerRefTagged
         });
 
-        alert("ออกคูปองสำเร็จ เลขที่: " + newVoucherCode);
+        alert("ออกคูปองพิเศษสำเร็จ! เลขที่: " + realTigerVoucherCode);
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินคูปองพิเศษ",
           staff: `${state.profile.display_name} (Owner)`,
           amount,
-          newCode: newVoucherCode,
+          voucherCode: realTigerVoucherCode,
           olds: [{ desc: "ออกคูปองพิเศษ (**1)", amount: amount }]
         });
 
@@ -695,24 +712,25 @@
           note: `Combined from: ${oldCodes.join(", ")}`
         });
 
-        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V-" + Date.now();
+        // สกัดรหัส Voucher จริงจาก Tiger
+        const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "COMBINE",
           staff_name: state.profile.display_name,
           total_amount: totalAmount,
-          new_voucher_code: newVoucherCode,
+          new_voucher_code: realTigerVoucherCode,
           old_vouchers: oldCodes
         });
 
-        alert("รวมคูปองเสร็จสมบูรณ์! ออกคูปองใหม่เลขที่: " + newVoucherCode);
+        alert("รวมคูปองเสร็จสมบูรณ์! ออกคูปองใหม่เลขที่: " + realTigerVoucherCode);
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินรวมคูปอง",
           staff: state.profile.display_name,
           amount: totalAmount,
-          newCode: newVoucherCode,
+          voucherCode: realTigerVoucherCode,
           olds: state.combineItems.map((item, idx) => ({ desc: `บิลที่ ${idx + 1}:`, code: item.code, amount: item.amount }))
         });
 
@@ -758,8 +776,8 @@
 
     document.getElementById("btn-refresh-history").addEventListener("click", loadHistory);
 
-    // ================= THERMAL PRINT SYSTEM (ตรงตามรูปภาพจริง 100%) =================
-    function triggerPrintSlip({ txId, actionTitle = "ใบรับเงินรวมคูปอง", staff, amount, newCode, olds = [], isReprint = false }) {
+    // ================= THERMAL PRINT SYSTEM (QR CODE VOUCHER ตัวจริง) =================
+    function triggerPrintSlip({ txId, actionTitle = "ใบรับเงินรวมคูปอง", staff, amount, voucherCode, olds = [], isReprint = false }) {
       const now = new Date();
       const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${now.toLocaleTimeString('th-TH')}`;
 
@@ -783,7 +801,8 @@
       olds.forEach(item => {
         const div = document.createElement("div");
         div.className = "flex justify-between font-bold";
-        div.innerHTML = `<span>${item.desc || item}</span><span>${item.amount ? item.amount.toFixed(2) + ' บาท' : ''}</span>`;
+        const descText = item.code ? `${item.desc} ${item.code}` : (item.desc || item);
+        div.innerHTML = `<span>${descText}</span><span>${item.amount ? item.amount.toFixed(2) + ' บาท' : ''}</span>`;
         oldList1.appendChild(div);
       });
 
@@ -799,19 +818,23 @@
       olds.forEach(item => {
         const div = document.createElement("div");
         div.className = "flex justify-between font-bold";
-        div.innerHTML = `<span>${item.code || item.desc || item}</span><span>${item.amount ? item.amount.toFixed(2) + ' ฿' : ''}</span>`;
+        const codeText = item.code || item.desc || item;
+        div.innerHTML = `<span>${codeText}</span><span>${item.amount ? item.amount.toFixed(2) + ' ฿' : ''}</span>`;
         oldList2.appendChild(div);
       });
 
       document.getElementById("slip-amount2").textContent = `${amount.toFixed(2)} บาท`;
-      document.getElementById("slip-code-formatted").textContent = formatCodeInGroups(newCode);
 
-      // สร้าง QR Code ขนาดใหญ่ชัดเจนตรงกลาง
+      // แสดงรหัส Voucher แท้จากระบบ Tiger (จัดกลุ่ม 4 หลักให้อ่านง่าย เช่น 3934 1185 8041)
+      const cleanCode = String(voucherCode).replace(/\s+/g, '');
+      document.getElementById("slip-code-formatted").textContent = formatCodeInGroups(cleanCode);
+
+      // นำรหัส Voucher แท้สร้างเป็น QR Code สำหรับหัวอ่านตู้จ่ายเงิน
       const qrContainer = document.getElementById("qrcode-container");
       qrContainer.innerHTML = "";
-      if (newCode && newCode !== "-") {
+      if (cleanCode && cleanCode !== "-") {
         new QRCode(qrContainer, {
-          text: newCode.replace(/\s+/g, ''),
+          text: cleanCode,
           width: 175,
           height: 175,
           colorDark: "#000000",
@@ -829,13 +852,13 @@
       }, 150);
     }
 
-    window.reprintTx = function(txId, actionType, staff, amount, newCode) {
+    window.reprintTx = function(txId, actionType, staff, amount, voucherCode) {
       triggerPrintSlip({
         txId,
         actionTitle: "ใบรับเงินรวมคูปอง",
         staff: staff,
         amount: parseFloat(amount),
-        newCode: newCode,
+        voucherCode: voucherCode,
         olds: [{ desc: "พิมพ์ซ้ำ (Reprint)", amount: parseFloat(amount) }],
         isReprint: true
       });
