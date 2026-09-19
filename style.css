@@ -1,0 +1,31 @@
+* {
+  font-family: 'Prompt', sans-serif;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #thermal-slip, #thermal-slip * {
+    visibility: visible;
+  }
+  #thermal-slip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 76mm;
+    margin: 0;
+    padding: 2mm 3mm;
+    background: #fff;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+    height: 10mm;
+    border-bottom: 2px dashed #000;
+    margin: 10mm 0;
+  }
+}
