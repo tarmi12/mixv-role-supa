@@ -1,31 +1,144 @@
-* {
-  font-family: 'Prompt', sans-serif;
-}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIGER CASHBOX - Voucher Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
 
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #thermal-slip, #thermal-slip * {
-    visibility: visible;
-  }
-  #thermal-slip {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 76mm;
-    margin: 0;
-    padding: 2mm 3mm;
-    background: #fff;
-    color: #000 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .page-break {
-    page-break-after: always;
-    break-after: page;
-    height: 10mm;
-    border-bottom: 2px dashed #000;
-    margin: 10mm 0;
-  }
-}
+  <!-- ================= DASHBOARD HEADER ================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+        <span class="font-bold text-lg text-slate-900 tracking-tight">TIGER VOUCHER</span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <label class="text-xs font-semibold text-slate-500 hidden sm:inline">ชื่อพนักงาน:</label>
+        <input type="text" id="staff_name" value="Staff-01" class="px-3 py-1.5 border rounded-lg text-sm font-bold text-slate-800 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- ================= 1. รวมยอดคูปอง ================= -->
+      <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-base">🔄</span>
+            <h2 class="text-lg font-bold text-slate-900">รวมยอดคูปอง (Combine Vouchers)</h2>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">ระบุเลขบิล แล้วยิงคูปองเดิมตั้งแต่ 2 ใบขึ้นไป ระบบจะตรวจยอดจากตู้ Tiger และสร้างใบใหม่ให้อัตโนมัติ</p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-600">เลขที่บิล / เอกสารอ้างอิง <span class="text-rose-500">*</span></label>
+              <input type="text" id="staff_combine_ref" placeholder="ระบุเลขบิลอ้างอิง เช่น 1801" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-slate-800">
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="text-xs font-semibold text-slate-600">รหัสคูปองเดิมที่ต้องการรวม (2 ใบขึ้นไป) <span class="text-rose-500">*</span></label>
+                <button type="button" id="btn-add-voucher-input" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold">+ เพิ่มช่องคูปอง</button>
+              </div>
+              <div id="voucher-inputs-container" class="space-y-2">
+                <input type="text" placeholder="ยิงหรือพิมพ์เลขคูปองใบที่ 1" class="staff-v-input w-full px-3 py-2 border rounded-lg uppercase tracking-wider text-sm font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <input type="text" placeholder="ยิงหรือพิมพ์เลขคูปองใบที่ 2" class="staff-v-input w-full px-3 py-2 border rounded-lg uppercase tracking-wider text-sm font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-combine" class="mt-6 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition text-sm shadow-sm">
+          ตรวจสอบยอดและดำเนินการรวมคูปอง
+        </button>
+      </section>
+
+      <!-- ================= 2. ยกเลิกคูปองเดี่ยว ================= -->
+      <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="p-2 bg-rose-50 text-rose-600 rounded-lg text-base">🔍</span>
+            <h2 class="text-lg font-bold text-slate-900">ยกเลิกคูปองเดี่ยว (Cancel Single)</h2>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">ยกเลิกคูปองที่ไม่ต้องการใช้งานออกจากระบบตู้ Tiger พร้อมพิมพ์สลิปยกเลิก</p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-600">รหัสคูปองที่ต้องการยกเลิก <span class="text-rose-500">*</span></label>
+              <input type="text" id="staff_cancel_code" placeholder="สแกนหรือพิมพ์เลขคูปอง 12 หลัก" class="mt-1 w-full px-3 py-2 border rounded-lg uppercase tracking-wider text-sm font-mono focus:ring-2 focus:ring-rose-500 focus:outline-none font-bold text-slate-800">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-600">เหตุผลในการยกเลิก</label>
+              <input type="text" id="staff_cancel_reason" placeholder="เช่น ลูกค้าขอเปลี่ยน, คูปองชำรุด" class="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-cancel" class="mt-6 w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition text-sm shadow-sm">
+          ยืนยันการยกเลิกคูปอง
+        </button>
+      </section>
+
+    </div>
+
+    <!-- ================= 3. ตารางประวัติและระบบแบ่งหน้า ================= -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="p-2 bg-blue-50 text-blue-600 rounded-lg text-base">📊</span>
+          <h2 class="font-bold text-slate-900 text-lg">ประวัติการทำรายการ</h2>
+        </div>
+        <button id="btn-refresh-history" class="text-sm text-amber-600 hover:text-amber-700 font-semibold">รีเฟรชข้อมูล</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-slate-400 text-xs uppercase font-semibold">
+            <tr>
+              <th class="p-3.5">เวลา</th>
+              <th class="p-3.5">รหัสรายการ / Ref</th>
+              <th class="p-3.5">ประเภท</th>
+              <th class="p-3.5">ผู้ทำรายการ</th>
+              <th class="p-3.5">มูลค่า (บาท)</th>
+              <th class="p-3.5">เลขคูปองใหม่</th>
+              <th class="p-3.5 text-center">พิมพ์ซ้ำ</th>
+              <th class="p-3.5 text-right">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="staff-history-rows" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="8" class="p-6 text-center text-slate-400 font-bold">กำลังโหลดประวัติ...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div id="history-pagination" class="hidden p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+        <div id="history-page-info">กำลังแสดงข้อมูล...</div>
+        <div class="flex items-center gap-2">
+          <button id="btn-prev-page" class="px-3 py-1.5 border rounded-lg hover:bg-slate-50 disabled:opacity-40 font-bold">ก่อนหน้า</button>
+          <span id="history-page-num" class="font-mono font-bold px-2">1 / 1</span>
+          <button id="btn-next-page" class="px-3 py-1.5 border rounded-lg hover:bg-slate-50 disabled:opacity-40 font-bold">ถัดไป</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= CONTAINER ปริ้นท์สลิป ================= -->
+  <div id="thermal-slip" class="hidden text-black font-sans leading-tight"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
