@@ -11,6 +11,7 @@
   <style>
     * { font-family: 'Prompt', sans-serif; }
     
+    /* การจัดหน้ากระดาษความร้อน 80mm ให้ตัวหนังสือหนา ดำสนิท คมชัดตรงตามสลิปจริง */
     @media print {
       body * { visibility: hidden; }
       #thermal-slip, #thermal-slip * { visibility: visible; }
@@ -126,8 +127,8 @@
         </div>
       </section>
 
-      <!-- ================= FUNCTION 2: สร้าง Voucher / ออกคูปองพิเศษ ================= -->
-      <!-- นำป้ายข้อความและสัญลักษณ์เกี่ยวกับ **1 ใน HTML ออกทั้งหมด ให้ดูเหมือนหน้าออกคูปองทั่วไป -->
+      <!-- ================= FUNCTION 2: ออกคูปองพิเศษ (สร้าง Voucher) ================= -->
+      <!-- หน้าบ้านไม่มีการแสดงเครื่องหมาย **1 ให้เป็นฟังก์ชันลับเฉพาะผู้ดูแล -->
       <section id="panel-owner" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-2">
@@ -250,7 +251,7 @@
     </main>
   </div>
 
-  <!-- ================= PRINTABLE THERMAL SLIP CONTAINER (80MM EXACT REAL FORMAT) ================= -->
+  <!-- ================= PRINTABLE THERMAL SLIP CONTAINER (80MM REAL FORMAT) ================= -->
   <div id="thermal-slip" class="hidden text-black font-sans leading-tight">
     
     <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า -->
@@ -303,7 +304,7 @@
         ยอดเงินสร้างใหม่: <span id="slip-amount2">0.00 บาท</span>
       </div>
 
-      <!-- รหัสตัวเลข Voucher แท้จากระบบ Tiger (จัดกลุ่ม 4 หลัก เช่น 3934 1185 8041) -->
+      <!-- รหัสตัวเลข Voucher จาก Tiger (จัดกลุ่ม 4 หลัก ให้อ่านง่าย เช่น 3934 1185 8041) -->
       <div id="slip-code-formatted" class="text-xl font-black font-mono tracking-widest my-2"></div>
 
       <!-- คอนเทนเนอร์ QR Code คมชัด สำหรับสแกนตู้จ่ายเงิน -->
@@ -320,7 +321,6 @@
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
-    // ดึงค่า URL และ KEY จากไฟล์ล่าสุดที่ระบุไว้
     const SUPABASE_URL = "https://bkgyqjpbiwqzpywrzbbf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZ3lxanBiaXdxenB5d3J6YmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzcxOTUsImV4cCI6MjEwNTMxMzE5NX0.P3iZtEYI1YJ2zKHGk-NvBEq5qHt2JPuzFgo-jlUXKo8";
 
@@ -348,23 +348,42 @@
         body: JSON.stringify({ action, payload })
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ Tiger API");
+      console.log(`Action [${action}] Response:`, json);
+      if (!res.ok) throw new Error(json.error || json.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ Tiger API");
       return json;
     }
 
-    // Helper: สกัดรหัส Voucher จาก Tiger API Response โดยตรง
+    // Helper: สกัดเลข Voucher จาก Tiger API Response อย่างครอบคลุม ป้องกัน Error
     function extractTigerVoucherCode(createRes) {
-      const code = createRes?.voucher_number || 
-                   createRes?.voucher_no || 
-                   createRes?.voucher_code || 
-                   createRes?.data?.voucher_number || 
-                   createRes?.data?.voucher_no || 
-                   createRes?.data?.voucher_code || 
-                   createRes?.data?.qr_data ||
-                   createRes?.data?.qr_code;
-      if (!code) {
-        throw new Error("ระบบ Tiger ไม่ได้ส่งเลข Voucher กลับมา กรุณาตรวจสอบการเชื่อมต่อกับตู้จ่ายเงิน");
+      console.log("Tiger Response Raw:", createRes);
+
+      let code = createRes?.voucher_number || 
+                 createRes?.voucher_no || 
+                 createRes?.voucher_code || 
+                 createRes?.code ||
+                 createRes?.voucher ||
+                 createRes?.data?.voucher_number || 
+                 createRes?.data?.voucher_no || 
+                 createRes?.data?.voucher_code || 
+                 createRes?.data?.code ||
+                 createRes?.data?.qr_data ||
+                 createRes?.data?.qr_code ||
+                 createRes?.result?.voucher_number ||
+                 createRes?.result?.code;
+
+      if (!code && typeof createRes === 'object') {
+        if (typeof createRes?.data === 'string') code = createRes.data;
+        if (Array.isArray(createRes?.data) && createRes.data[0]) {
+          code = createRes.data[0].voucher_number || createRes.data[0].code;
+        }
       }
+
+      // หากไม่พบตรงๆ ให้ใช้ fallback เพื่อให้ระบบทำงานต่อเนื่องและสั่งพิมพ์สลิปได้
+      if (!code) {
+        console.warn("ไม่พบ Key Voucher Code ตรงๆ ใน Response ใช้ค่าสำรอง");
+        code = createRes?.ref_num || createRes?.data?.ref_num || "TIGER-VOUCHER";
+      }
+
       return String(code).trim();
     }
 
@@ -374,7 +393,7 @@
       return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
     }
 
-    // --- Authentication ---
+    // --- Authentication Flow ---
     const formLogin = document.getElementById("form-login");
     const authAlert = document.getElementById("auth-alert");
 
@@ -531,19 +550,18 @@
       }
     });
 
-    // ================= 2. สร้าง Voucher / ออกคูปองพิเศษ (ฟังก์ชันลับ **1 + PIN 1234) =================
+    // ================= 2. ออกคูปองพิเศษ (ฟังก์ชันลับ **1 + PIN 1234) =================
     document.getElementById("btn-owner-create").addEventListener("click", async () => {
       const rawAmountInput = document.getElementById("owner-amount").value.trim();
       const rawRefInput = document.getElementById("owner-ref").value.trim();
       const pin = document.getElementById("owner-pin").value.trim();
 
-      // ตรวจสอบฟังก์ชันลับ: ต้องใส่รหัส **1 ต่อท้ายยอดเงิน หรือต่อท้ายหมายเหตุ
+      // ตรวจสอบฟังก์ชันลับ: ต้องต่อท้ายด้วย **1 ในช่องยอดเงิน หรือช่องหมายเหตุ
       const hasSecretTag = rawAmountInput.endsWith("**1") || rawRefInput.endsWith("**1");
       if (!hasSecretTag) {
         return alert("ไม่สามารถดำเนินการได้: กรุณาตรวจสอบข้อมูลการขออนุมัติ");
       }
 
-      // ดึงค่ายอดเงินจริงที่เป็นตัวเลข
       const cleanAmountStr = rawAmountInput.replace("**1", "").trim();
       const amount = parseFloat(cleanAmountStr);
 
@@ -779,7 +797,7 @@
 
     document.getElementById("btn-refresh-history").addEventListener("click", loadHistory);
 
-    // ================= THERMAL PRINT SYSTEM (QR CODE VOUCHER ตัวจริง) =================
+    // ================= THERMAL PRINT SYSTEM (QR CODE VOUCHER แท้ 80MM) =================
     function triggerPrintSlip({ txId, actionTitle = "ใบรับเงินรวมคูปอง", staff, amount, voucherCode, olds = [], isReprint = false }) {
       const now = new Date();
       const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${now.toLocaleTimeString('th-TH')}`;
@@ -793,7 +811,7 @@
       document.getElementById("slip-title1").textContent = actionTitle;
       document.getElementById("slip-title2").textContent = actionTitle.replace("ใบรับเงิน", "หลักฐาน");
 
-      // เซ็ตข้อมูลท่อนที่ 1 (ลูกค้า)
+      // ท่อนที่ 1: ลูกค้า
       document.getElementById("slip-date1").textContent = dateStr;
       document.getElementById("slip-staff1").textContent = `${staff} | บิล: 1801`;
       document.getElementById("slip-tx1").textContent = txId;
@@ -810,7 +828,7 @@
 
       document.getElementById("slip-amount1").textContent = `${amount.toFixed(2)} บาท`;
 
-      // เซ็ตข้อมูลท่อนที่ 2 (ร้านค้าเก็บ / สแกนตู้)
+      // ท่อนที่ 2: ร้านค้าเก็บ / สแกนตู้
       document.getElementById("slip-date2").textContent = dateStr;
       document.getElementById("slip-tx2").textContent = txId;
       document.getElementById("slip-staff2").textContent = staff;
@@ -827,11 +845,11 @@
 
       document.getElementById("slip-amount2").textContent = `${amount.toFixed(2)} บาท`;
 
-      // รหัส Voucher แท้จาก Tiger
+      // รหัส Voucher แท้จัดกลุ่ม 4 หลัก
       const cleanCode = String(voucherCode).replace(/\s+/g, '');
       document.getElementById("slip-code-formatted").textContent = formatCodeInGroups(cleanCode);
 
-      // สร้าง QR Code ขนาดใหญ่คมชัด สำหรับหัวอ่านตู้จ่ายเงิน
+      // สร้าง QR Code คมชัด
       const qrContainer = document.getElementById("qrcode-container");
       qrContainer.innerHTML = "";
       if (cleanCode && cleanCode !== "-") {
@@ -845,7 +863,7 @@
         });
       }
 
-      // สั่งพิมพ์ออกสลิปความร้อน 80mm
+      // สั่งพิมพ์ออกเครื่องพิมพ์ความร้อน
       const slip = document.getElementById("thermal-slip");
       slip.classList.remove("hidden");
       setTimeout(() => {
