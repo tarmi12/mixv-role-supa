@@ -152,30 +152,45 @@
       <!-- Grid แบ่ง 2 ฝั่งสำหรับ ฟังก์ชัน 4 และ 3 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- ================= FUNCTION 4: รวมบิลและสร้าง (Combine Vouchers) ================= -->
+       <!-- ================= FUNCTION 4: รวมบิลและสร้าง (Combine Vouchers) ================= -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center space-x-2 mb-3">
               <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-base">🔄</span>
               <h2 class="text-lg font-bold text-slate-900">4. รวมบิลและสร้าง (Combine Vouchers)</h2>
             </div>
-            <p class="text-xs text-slate-500 mb-4">สแกนรหัสคูปองเดิมหลายๆ ใบ ระบุยอดแต่ละใบ เพื่อยกเลิกและรวมยอดเป็น 1 ใบใหม่จากตู้ Tiger</p>
+            <p class="text-xs text-slate-500 mb-4">ยิงรหัสคูปองและระบุยอดเงินของแต่ละใบ เพื่อรวบยอดออกใบใหม่ใบเดียว</p>
+            
             <div class="space-y-3">
-              <div class="flex gap-2">
-                <input type="text" id="input-combine-code" placeholder="สแกนหรือพิมพ์เลขคูปอง" class="flex-1 px-3 py-2 border rounded-lg uppercase tracking-wider text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                <button id="btn-add-combine" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm">เพิ่ม</button>
+              <!-- แถวสำหรับยิงรหัสและใส่ยอดเงินแบบไม่ต้องพึ่ง prompt() -->
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <div class="sm:col-span-6">
+                  <input type="text" id="input-combine-code" placeholder="สแกน/พิมพ์เลขคูปอง" class="w-full px-3 py-2 border rounded-lg uppercase tracking-wider text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+                <div class="sm:col-span-4">
+                  <input type="number" step="any" id="input-combine-amount" placeholder="ยอดเงิน (บาท)" class="w-full px-3 py-2 border-2 border-emerald-400 rounded-lg text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                  <button type="button" id="btn-add-combine" class="w-full h-full py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-lg text-sm transition">
+                    + เพิ่ม
+                  </button>
+                </div>
               </div>
-              <ul id="list-combine" class="divide-y divide-slate-100 max-h-40 overflow-y-auto border rounded-lg px-3">
-                <li class="py-2 text-xs text-slate-400 text-center">ยังไม่มีรายการคูปอง</li>
+
+              <!-- รายการคูปองที่ถูกเพิ่มเข้ามา -->
+              <ul id="list-combine" class="divide-y divide-slate-100 max-h-44 overflow-y-auto border rounded-lg px-3 bg-slate-50/50">
+                <li class="py-3 text-xs text-slate-400 text-center">ยังไม่มีรายการคูปอง</li>
               </ul>
-              <div class="flex justify-between items-center pt-2 font-bold text-sm">
+
+              <div class="flex justify-between items-center pt-2 font-bold text-sm border-t border-slate-100">
                 <span>ยอดรวมทั้งหมด:</span>
-                <span id="text-combine-total" class="text-lg text-emerald-600">0.00 ฿</span>
+                <span id="text-combine-total" class="text-xl font-black text-emerald-600">0.00 ฿</span>
               </div>
             </div>
           </div>
-          <button id="btn-submit-combine" disabled class="mt-4 w-full py-3 bg-amber-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-lg transition text-sm">
-            ยืนยันการรวมบิลและสร้าง
+
+          <button id="btn-submit-combine" disabled class="mt-4 w-full py-3 bg-amber-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-lg transition text-sm shadow-sm">
+            ยืนยันการรวมบิลและสร้าง QR ใหม่
           </button>
         </div>
 
@@ -607,31 +622,69 @@
       }
     });
 
-    // ================= 4. รวมบิลและสร้าง (Combine Vouchers) =================
-    const inputCombine = document.getElementById("input-combine-code");
+   // ================= 4. รวมบิลและสร้าง (Combine Vouchers) =================
+    const inputCombineCode = document.getElementById("input-combine-code");
+    const inputCombineAmount = document.getElementById("input-combine-amount");
     const btnAddCombine = document.getElementById("btn-add-combine");
     const listCombine = document.getElementById("list-combine");
     const textCombineTotal = document.getElementById("text-combine-total");
     const btnSubmitCombine = document.getElementById("btn-submit-combine");
 
-    btnAddCombine.addEventListener("click", () => {
-      const code = inputCombine.value.trim().toUpperCase();
-      if (!code) return;
-      if (state.combineItems.find(item => item.code === code)) return alert("มีเลขคูปองนี้อยู่ในรายการแล้ว");
+    // ฟังก์ชันเพิ่มรายการลงตาราง
+    function addCombineEntry() {
+      const code = inputCombineCode.value.trim().replace(/\s+/g, '').toUpperCase();
+      const amount = parseFloat(inputCombineAmount.value);
 
-      const amountStr = prompt(`ระบุยอดเงินของคูปอง [${code}]:`, "0.00");
-      const amount = parseFloat(amountStr);
-      if (isNaN(amount) || amount <= 0) return alert("ยอดเงินไม่ถูกต้อง");
+      if (!code) {
+        inputCombineCode.focus();
+        return alert("กรุณายิงหรือพิมพ์เลขคูปอง");
+      }
 
+      if (isNaN(amount) || amount <= 0) {
+        inputCombineAmount.focus();
+        return alert("กรุณาระบุยอดเงินของคูปองใบนี้ให้ถูกต้อง");
+      }
+
+      // เช็คว่ามีเลขนี้อยู่ในรายการแล้วหรือยัง
+      if (state.combineItems.some(item => item.code === code)) {
+        return alert("มีรหัสคูปองนี้อยู่ในรายการรวมแล้ว");
+      }
+
+      // เพิ่มเข้า State
       state.combineItems.push({ code, amount });
-      inputCombine.value = "";
+
+      // ล้างช่อง input เพื่อเตรียมยิงใบต่อไป
+      inputCombineCode.value = "";
+      inputCombineAmount.value = "";
+      inputCombineCode.focus();
+
       renderCombineList();
+    }
+
+    // กดปุ่มเพิ่ม
+    btnAddCombine.addEventListener("click", addCombineEntry);
+
+    // รองรับการกด Enter ทั้งสองช่อง ให้เพิ่มรายการทันที
+    inputCombineCode.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        inputCombineAmount.focus(); // ยิงโค้ดเสร็จ เด้งไปช่องใส่ยอดเงินทันที
+      }
     });
 
+    inputCombineAmount.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addCombineEntry(); // ใส่ยอดเสร็จ กด Enter บันทึกลงตารางทันที
+      }
+    });
+
+    // แสดงผลรายการคูปองในลิสต์
     function renderCombineList() {
       listCombine.innerHTML = "";
+
       if (state.combineItems.length === 0) {
-        listCombine.innerHTML = `<li class="py-2 text-xs text-slate-400 text-center">ยังไม่มีรายการคูปอง</li>`;
+        listCombine.innerHTML = `<li class="py-3 text-xs text-slate-400 text-center">ยังไม่มีรายการคูปอง</li>`;
         textCombineTotal.textContent = "0.00 ฿";
         btnSubmitCombine.disabled = true;
         return;
@@ -641,10 +694,15 @@
       state.combineItems.forEach((item, index) => {
         total += item.amount;
         const li = document.createElement("li");
-        li.className = "py-2 flex justify-between items-center text-xs";
+        li.className = "py-2.5 flex justify-between items-center text-xs";
         li.innerHTML = `
-          <span class="font-medium text-slate-800">${item.code} (${item.amount.toFixed(2)} ฿)</span>
-          <button onclick="removeCombineItem(${index})" class="text-red-500 font-bold hover:underline">ลบ</button>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+            <span class="font-mono font-bold text-slate-900">${formatCodeInGroups(item.code)}</span>
+            <span class="text-emerald-600 font-bold">(${item.amount.toFixed(2)} บาท)</span>
+          </div>
+          <button onclick="removeCombineItem(${index})" class="text-red-500 font-bold hover:text-red-700 px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition">
+            ลบ
+          </button>
         `;
         listCombine.appendChild(li);
       });
@@ -658,19 +716,30 @@
       renderCombineList();
     };
 
+    // กดยืนยันการรวมบิล ยกเลิกใบเดิมทั้งหมด และออก QR ใบใหม่
     btnSubmitCombine.addEventListener("click", async () => {
       if (state.combineItems.length === 0) return;
-      if (!confirm("ยืนยันการรวมและยกเลิกคูปองเก่าทั้งหมดเพื่อออกใบใหม่?")) return;
 
       const totalAmount = state.combineItems.reduce((acc, curr) => acc + curr.amount, 0);
       const oldCodes = state.combineItems.map(i => i.code);
-      const txId = "TX-" + Date.now();
+
+      if (!confirm(`ยืนยันการรวมคูปองทั้งหมด ${oldCodes.length} ใบ\nยอดรวมสุทธิ: ${totalAmount.toFixed(2)} บาท?`)) return;
+
+      btnSubmitCombine.disabled = true;
+      btnSubmitCombine.textContent = "กำลังดำเนินการ...";
+      const txId = "TX-CMB-" + Date.now();
 
       try {
+        // 1. วนลูปยกเลิกคูปองเก่าทั้งหมดออกจากระบบ Tiger
         for (const code of oldCodes) {
-          await callEdgeFunction("cancel", { voucher_num: code });
+          try {
+            await callEdgeFunction("cancel", { voucher_num: code });
+          } catch (cancelErr) {
+            console.warn(`ยกเลิกคูปอง ${code} ไม่สำเร็จหรือถูกยกเลิกไปก่อนหน้าแล้ว:`, cancelErr);
+          }
         }
 
+        // 2. สร้าง Voucher ใบใหม่ยอดรวม
         const createRes = await callEdgeFunction("create", {
           amount: totalAmount,
           ref_num: txId,
@@ -679,16 +748,20 @@
 
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
+        // 3. บันทึกลงตาราง voucher_transactions
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "COMBINE",
           staff_name: state.profile.display_name,
           total_amount: totalAmount,
           new_voucher_code: realTigerVoucherCode,
-          old_vouchers: oldCodes
+          old_vouchers: oldCodes,
+          ref_num: `รวม ${oldCodes.length} ใบ -> ${realTigerVoucherCode}`
         });
 
-        alert("รวมคูปองเสร็จสมบูรณ์! ออกคูปองใหม่เลขที่: " + realTigerVoucherCode);
+        alert("รวมคูปองสำเร็จเรียบร้อย! เลขที่ใบใหม่: " + realTigerVoucherCode);
+
+        // 4. สั่งพิมพ์สลิปความร้อน 80mm
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินรวมคูปอง",
@@ -698,14 +771,17 @@
           olds: state.combineItems.map((item, idx) => ({ desc: `บิลที่ ${idx + 1}:`, code: item.code, amount: item.amount }))
         });
 
+        // ล้าง State
         state.combineItems = [];
         renderCombineList();
         loadHistory();
       } catch (err) {
         alert("เกิดข้อผิดพลาดในการรวมคูปอง: " + err.message);
+      } finally {
+        btnSubmitCombine.disabled = false;
+        btnSubmitCombine.textContent = "ยืนยันการรวมบิลและสร้าง QR ใหม่";
       }
     });
-
     // ================= 5. หน้ารายงาน (Transaction History Loader) =================
     async function loadHistory() {
       const tbody = document.getElementById("history-rows");
