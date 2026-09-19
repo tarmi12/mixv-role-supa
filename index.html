@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TIGER CASHBOX - Voucher Management System</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <!-- QRCode.js สำหรับสร้าง QR Code สแกนที่ตู้จ่ายเงิน -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { font-family: 'Prompt', sans-serif; }
+    
+    /* สไตล์พิมพ์สลิปความร้อน 80mm ให้ตัวหนังสือหนา ใหญ่ คมชัด ดำสนิท */
     @media print {
       body * { visibility: hidden; }
       #thermal-slip, #thermal-slip * { visibility: visible; }
@@ -16,16 +19,20 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 80mm;
+        width: 78mm;
         margin: 0;
-        padding: 4mm;
+        padding: 2mm 3mm;
+        background: #fff;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       .page-break {
         page-break-after: always;
         break-after: page;
         height: 12mm;
         border-bottom: 2px dashed #000;
-        margin-bottom: 12mm;
+        margin: 12mm 0;
       }
     }
   </style>
@@ -78,34 +85,85 @@
     <!-- Main Body -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-      <!-- Owner Direct Issue Panel -->
-      <section id="panel-owner" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-900">👑 ออกคูปองพิเศษ (เฉพาะสิทธิ์ Owner)</h2>
-          <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">ยืนยัน PIN</span>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label class="text-xs font-semibold text-slate-500">มูลค่า (บาท)</label>
-            <input type="number" id="owner-amount" step="any" placeholder="0.00" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-lg font-bold text-emerald-600">
+      <!-- ================= OWNER EXCLUSIVE PANELS ================= -->
+      <div id="panel-owner" class="hidden space-y-6">
+        
+        <!-- แผงที่ 1: ออกคูปองพิเศษ (ใส่ **1 ต่อท้ายยอดเงินอัตโนมัติ) -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border-2 border-amber-400">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">👑 ออกคูปองพิเศษ (เฉพาะสิทธิ์ Owner)</h2>
+              <p class="text-xs text-amber-700 mt-0.5 font-medium">* บันทึกต่อท้ายด้วยรหัส <strong>**1</strong> ในยอดเงินและเลขอ้างอิงอัตโนมัติ</p>
+            </div>
+            <span class="text-xs bg-amber-100 text-amber-900 px-3 py-1 rounded-full font-bold">ยืนยัน PIN</span>
           </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-500">เลขอ้างอิง / หมายเหตุ</label>
-            <input type="text" id="owner-ref" placeholder="ระบุเหตุผลหรือเลขเอกสาร" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-600">มูลค่า (บาท)</label>
+              <div class="relative mt-1">
+                <input type="number" id="owner-amount" step="any" placeholder="0.00" class="w-full pl-3 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-lg font-black text-emerald-600">
+                <span class="absolute right-3 top-2.5 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">**1</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-600">เลขอ้างอิง / หมายเหตุ</label>
+              <input type="text" id="owner-ref" placeholder="ระบุเหตุผลหรือเลขเอกสาร" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-600">PIN ยืนยัน (1234)</label>
+              <input type="password" id="owner-pin" maxlength="6" placeholder="PIN 4 หลัก" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none tracking-widest text-center font-bold">
+            </div>
+            <div class="flex items-end">
+              <button id="btn-owner-create" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-lg transition-colors shadow-sm">
+                อนุมัติออกคูปอง (**1)
+              </button>
+            </div>
           </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-500">PIN ยืนยัน (1234)</label>
-            <input type="password" id="owner-pin" maxlength="6" placeholder="PIN 4 หลัก" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none tracking-widest text-center font-bold">
-          </div>
-          <div class="flex items-end">
-            <button id="btn-owner-create" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-semibold rounded-lg transition-colors">
-              อนุมัติออกคูปอง
-            </button>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Operation Panels Grid -->
+        <!-- แผงที่ 2: ยิงสแกน QR ยกเลิก และสร้าง QR Voucher ใหม่ทันที -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border-2 border-indigo-300 bg-indigo-50/20">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">⚡ สแกน QR เดิมเพื่อยกเลิก แล้วออก QR Voucher ใหม่ (Re-issue)</h2>
+              <p class="text-xs text-slate-500">ยิง QR Code หน้าสลิปเดิม ระบบจะดึงยอดเดิม ยกเลิกทันที แล้วสร้าง QR Code ใบใหม่ออกมา</p>
+            </div>
+            <span class="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold">Owner Action</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div class="md:col-span-2">
+              <label class="text-xs font-semibold text-slate-700">ยิงหรือพิมพ์ QR Code / เลขคูปองเดิม</label>
+              <div class="flex gap-2 mt-1">
+                <input type="text" id="owner-scan-input" placeholder="ยิงบาร์โค้ด/QR Code เดิมที่นี่..." class="flex-1 px-4 py-2.5 border-2 border-indigo-400 rounded-lg text-lg font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <button id="btn-owner-verify-old" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition">
+                  ตรวจสอบยอด
+                </button>
+              </div>
+            </div>
+            <div>
+              <button id="btn-owner-reissue" disabled class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 text-white font-bold rounded-lg transition text-base shadow-sm">
+                ยกเลิก & ออก QR ใหม่ทันที
+              </button>
+            </div>
+          </div>
+
+          <!-- กล่องพรีวิวยอดคูปองเดิมก่อนกดยืนยัน -->
+          <div id="box-owner-preview" class="hidden mt-4 p-4 bg-white border border-indigo-200 rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-500 font-medium">คูปองเดิมที่ตรวจพบ:</span>
+              <span id="preview-old-code" class="ml-2 font-mono font-bold text-slate-800"></span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-500 font-medium">ยอดเงินเดิม:</span>
+              <span id="preview-old-amount" class="ml-2 font-mono font-black text-xl text-emerald-600">0.00 บาท</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ================= OPERATION PANELS ================= -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <!-- Action 1: Combine Vouchers -->
@@ -169,7 +227,7 @@
                 <th class="px-6 py-3">ประเภท</th>
                 <th class="px-6 py-3">ผู้ทำรายการ</th>
                 <th class="px-6 py-3">มูลค่า (บาท)</th>
-                <th class="px-6 py-3">เลขคูปองใหม่</th>
+                <th class="px-6 py-3">เลขคูปอง QR ใหม่</th>
                 <th class="px-6 py-3 text-right">การจัดการ</th>
               </tr>
             </thead>
@@ -184,55 +242,67 @@
     </main>
   </div>
 
-  <!-- ================= PRINTABLE THERMAL SLIP CONTAINER ================= -->
-  <div id="thermal-slip" class="hidden text-black font-mono">
-    <!-- ท่อนที่ 1: ลูกค้าถือ (Customer Copy) -->
-    <div class="slip-segment text-center">
-      <div class="text-2xl font-black mb-1">TIGER CASHBOX</div>
-      <div class="text-sm font-bold border-y-2 border-black py-1 my-2">*** คูปองเงินสด (ฉบับลูกค้า) ***</div>
-      <div class="text-left text-xs space-y-1 my-2">
-        <div>รหัสธุรกรรม: <span id="slip-tx1"></span></div>
-        <div>วันที่: <span id="slip-date1"></span></div>
+  <!-- ================= PRINTABLE THERMAL SLIP CONTAINER (80mm) ================= -->
+  <div id="thermal-slip" class="hidden text-black font-sans leading-snug">
+    
+    <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า -->
+    <div class="slip-segment text-left">
+      <div class="border-2 border-black py-1.5 text-center font-black text-base tracking-wide mb-2">
+        *** ใบรับเงินคูปอง (ฉบับลูกค้า) ***
+      </div>
+      <div class="text-[13.5px] font-bold space-y-1">
+        <div>วันที่-เวลา: <span id="slip-date1" class="font-mono font-bold"></span></div>
         <div>พนักงาน: <span id="slip-staff1"></span></div>
+        <div>TX ID: <span id="slip-tx1" class="font-mono"></span></div>
       </div>
-      <div class="my-4">
-        <div class="text-sm font-bold">มูลค่าเงินสดสุทธิ</div>
-        <div class="text-3xl font-black mt-1" id="slip-amount1">0.00 ฿</div>
+
+      <div class="my-2 border-t-2 border-b-2 border-black py-2">
+        <div id="slip-old-items1" class="text-[14px] font-black space-y-1"></div>
       </div>
-      <div class="flex justify-center my-3">
-        <svg id="barcode-1"></svg>
+
+      <div class="flex justify-between items-center text-lg font-black my-2">
+        <span>ยอดรวมสุทธิ:</span>
+        <span id="slip-amount1" class="text-2xl font-black">0.00 บาท</span>
       </div>
-      <div class="text-base font-black tracking-widest my-1" id="slip-code1"></div>
-      <div class="text-[10px] text-gray-700 mt-2">โปรดแสดงคูปองนี้เพื่อรับเงินสดภายในเวลาทำการ</div>
     </div>
 
     <!-- เส้นประตัดกระดาษจริง -->
     <div class="page-break"></div>
 
-    <!-- ท่อนที่ 2: ร้านค้า/แคชเชียร์เก็บ (Merchant Audit Copy) -->
-    <div class="slip-segment text-center">
-      <div class="text-xl font-bold mb-1">หลักฐานการทำรายการ</div>
-      <div class="text-xs font-bold border-y border-black py-1 my-1">*** สำหรับแคชเชียร์ / บัญชี ***</div>
-      <div class="text-left text-xs space-y-1 my-2">
-        <div>รหัสธุรกรรม: <span id="slip-tx2"></span></div>
-        <div>ประเภท: <span id="slip-action2"></span></div>
-        <div>คูปองเดิม: <span id="slip-olds2"></span></div>
-        <div>คูปองใหม่: <span id="slip-new2"></span></div>
-        <div>ยอดเงิน: <span id="slip-amount2" class="font-bold"></span></div>
-        <div>ผู้อนุมัติ: <span id="slip-staff2"></span></div>
-        <div>วันที่/เวลา: <span id="slip-date2"></span></div>
+    <!-- ท่อนที่ 2: ร้านค้าเก็บไว้ / สแกนที่ตู้จ่ายเงิน -->
+    <div class="slip-segment text-center pt-1">
+      <div class="border-2 border-black py-1.5 text-center font-black text-base tracking-wide mb-1">
+        *** หลักฐานการออกคูปอง ***
       </div>
-      <div class="mt-6 pt-4 border-t border-dashed border-black flex justify-between text-xs">
-        <div>( ลงชื่อลูกค้า )</div>
-        <div>( แคชเชียร์ )</div>
+      <div class="text-[12.5px] font-black mb-2">(ร้านเก็บไว้ / สแกนที่ตู้จ่ายเงิน)</div>
+
+      <div class="text-left text-[13.5px] font-bold space-y-1 my-2">
+        <div>วันที่-เวลา: <span id="slip-date2" class="font-mono font-bold"></span></div>
+        <div>TX: <span id="slip-tx2" class="font-mono"></span></div>
+        <div>พนักงาน: <span id="slip-staff2"></span></div>
+        <div id="slip-old-items2" class="mt-2 border-t border-dashed border-black pt-1.5 text-[13.5px] font-black"></div>
+      </div>
+
+      <div class="text-left font-black text-base my-2">
+        ยอดเงินสร้างใหม่: <span id="slip-amount2" class="text-xl font-black">0.00 บาท</span>
+      </div>
+
+      <!-- รหัสตัวเลขจัดกลุ่ม 4 หลัก ตัวใหญ่พิเศษ -->
+      <div id="slip-code-formatted" class="text-2xl font-black font-mono tracking-widest my-2"></div>
+
+      <!-- คอนเทนเนอร์ QR Code กว้าง 195px ชัดเต็มกรอบ -->
+      <div class="flex justify-center my-3">
+        <div id="qrcode-container" class="p-2 bg-white inline-block border border-black"></div>
+      </div>
+
+      <div class="text-[12px] font-black text-center mt-1">
+        *** นำ QR Code สแกนที่ตู้จ่ายเงินทันที ***
       </div>
     </div>
   </div>
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
-    // --- ตั้งค่า SUPABASE CONFIG ---
-    // โปรดระบุ URL และ Anon Key ของโปรเจกต์ Supabase ของคุณ
     const SUPABASE_URL = "https://bkgyqjpbiwqzpywrzbbf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZ3lxanBiaXdxenB5d3J6YmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzcxOTUsImV4cCI6MjEwNTMxMzE5NX0.P3iZtEYI1YJ2zKHGk-NvBEq5qHt2JPuzFgo-jlUXKo8";
 
@@ -240,10 +310,10 @@
       user: null,
       profile: null,
       sessionToken: null,
-      combineItems: []
+      combineItems: [],
+      ownerScannedItem: null
     };
 
-    // Helper: Supabase REST API Headers
     function getHeaders(token = state.sessionToken) {
       const headers = {
         "apikey": SUPABASE_ANON_KEY,
@@ -253,7 +323,6 @@
       return headers;
     }
 
-    // Call Edge Function
     async function callEdgeFunction(action, payload = {}) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/tiger-api`, {
         method: "POST",
@@ -261,11 +330,17 @@
         body: JSON.stringify({ action, payload })
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      if (!res.ok) throw new Error(json.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ API");
       return json;
     }
 
-    // --- Authentication Flow ---
+    function formatCodeInGroups(code) {
+      if (!code) return "";
+      const cleaned = code.replace(/\s+/g, '');
+      return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+    }
+
+    // --- Authentication ---
     const formLogin = document.getElementById("form-login");
     const authAlert = document.getElementById("auth-alert");
 
@@ -280,7 +355,6 @@
       const password = document.getElementById("login-password").value;
 
       try {
-        // ล็อกอินผ่าน Supabase Auth REST Endpoint โดยตรง
         const authRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
           method: "POST",
           headers: getHeaders(null),
@@ -292,13 +366,12 @@
         state.sessionToken = authData.access_token;
         state.user = authData.user;
 
-        // ดึง Profile ของผู้ใช้งานจากฐานข้อมูล
         const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${state.user.id}&select=*`, {
           headers: getHeaders(state.sessionToken)
         });
         const profiles = await profileRes.json();
         if (!profiles || profiles.length === 0) {
-          throw new Error("ไม่พบข้อมูลสิทธิ์ผู้ใช้งาน (Profile) กรุณาตรวจสอบ UID ในตาราง profiles");
+          throw new Error("ไม่พบข้อมูลสิทธิ์ผู้ใช้งานในระบบ");
         }
 
         state.profile = profiles[0];
@@ -313,25 +386,23 @@
     });
 
     document.getElementById("btn-logout").addEventListener("click", () => {
-      state = { user: null, profile: null, sessionToken: null, combineItems: [] };
+      state = { user: null, profile: null, sessionToken: null, combineItems: [], ownerScannedItem: null };
       document.getElementById("view-dashboard").classList.add("hidden");
       document.getElementById("view-auth").classList.remove("hidden");
       document.getElementById("login-password").value = "";
     });
 
-    // --- Dashboard Initializer ---
     function initDashboard() {
       document.getElementById("view-auth").classList.add("hidden");
       document.getElementById("view-dashboard").classList.remove("hidden");
-
       document.getElementById("user-display").textContent = `${state.profile.display_name} (${state.profile.email})`;
 
       const badge = document.getElementById("badge-role");
       const ownerPanel = document.getElementById("panel-owner");
 
       if (state.profile.role === "owner") {
-        badge.textContent = "OWNER PORTAL";
-        badge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-800";
+        badge.textContent = "👑 OWNER PORTAL";
+        badge.className = "text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-100 text-amber-900 border border-amber-300";
         ownerPanel.classList.remove("hidden");
       } else {
         badge.textContent = "STAFF PORTAL";
@@ -342,45 +413,47 @@
       loadHistory();
     }
 
-    // --- Owner Direct Issue Action ---
+    // --- 1. Owner Direct Issue (พร้อมต่อท้ายรหัส **1) ---
     document.getElementById("btn-owner-create").addEventListener("click", async () => {
-      const amount = parseFloat(document.getElementById("owner-amount").value);
-      const ref = document.getElementById("owner-ref").value.trim();
+      const amountVal = parseFloat(document.getElementById("owner-amount").value);
+      const refVal = document.getElementById("owner-ref").value.trim();
       const pin = document.getElementById("owner-pin").value.trim();
 
-      if (!amount || amount <= 0) return alert("กรุณาระบุมูลค่าเงินที่ถูกต้อง");
+      if (!amountVal || amountVal <= 0) return alert("กรุณาระบุมูลค่าเงินที่ถูกต้อง");
       if (pin !== "1234") return alert("รหัส PIN ยืนยันไม่ถูกต้อง");
+
+      const ownerRefTagged = refVal ? `${refVal}**1` : `OWNER**1`;
+      const txId = "TX-OWN-" + Date.now();
 
       try {
         const createRes = await callEdgeFunction("create", {
-          amount,
-          ref_num: ref || Date.now(),
+          amount: amountVal,
+          ref_num: ownerRefTagged,
           require_pin: true,
           pin,
-          is_owner_action: true
+          is_owner_action: true,
+          tag: "**1"
         });
 
-        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || "V-" + Date.now();
-        const txId = "TX-OWN-" + Date.now();
+        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V" + Date.now();
 
-        // บันทึกลงตาราง voucher_transactions
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "OWNER_DIRECT",
-          staff_name: state.profile.display_name,
-          total_amount: amount,
+          staff_name: `${state.profile.display_name} (**1)`,
+          total_amount: amountVal,
           new_voucher_code: newVoucherCode,
-          ref_num: ref || "-"
+          ref_num: ownerRefTagged
         });
 
-        alert("ออกคูปองสำเร็จ เลขที่: " + newVoucherCode);
+        alert(`ออกคูปองสำเร็จ! เลขที่: ${newVoucherCode}`);
         triggerPrintSlip({
           txId,
           actionType: "OWNER DIRECT",
-          staff: state.profile.display_name,
-          amount,
+          staff: `${state.profile.display_name} (Owner)`,
+          amount: amountVal,
           newCode: newVoucherCode,
-          olds: ["-"]
+          olds: [{ desc: "ออกคูปองพิเศษ (**1)", amount: amountVal }]
         });
 
         document.getElementById("owner-amount").value = "";
@@ -392,7 +465,92 @@
       }
     });
 
-    // --- Combine Vouchers Flow ---
+    // --- 2. Owner Scan QR -> Cancel & Re-issue QR ใหม่ทันที ---
+    const scanInput = document.getElementById("owner-scan-input");
+    const btnVerifyOld = document.getElementById("btn-owner-verify-old");
+    const btnReissue = document.getElementById("btn-owner-reissue");
+    const boxPreview = document.getElementById("box-owner-preview");
+    const previewCode = document.getElementById("preview-old-code");
+    const previewAmount = document.getElementById("preview-old-amount");
+
+    btnVerifyOld.addEventListener("click", async () => {
+      const code = scanInput.value.trim().replace(/\s+/g, '');
+      if (!code) return alert("กรุณายิงหรือกรอกเลข QR Code เดิม");
+
+      try {
+        const info = await callEdgeFunction("show", { voucher_num: code });
+        const amount = parseFloat(info?.amount || info?.data?.amount || 0);
+
+        state.ownerScannedItem = { code, amount };
+        previewCode.textContent = formatCodeInGroups(code);
+        previewAmount.textContent = `${amount.toFixed(2)} บาท`;
+        boxPreview.classList.remove("hidden");
+        btnReissue.disabled = false;
+      } catch (err) {
+        alert("ไม่พบข้อมูลคูปอง หรือถูกใช้งาน/ยกเลิกไปแล้ว: " + err.message);
+      }
+    });
+
+    scanInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        btnVerifyOld.click();
+      }
+    });
+
+    btnReissue.addEventListener("click", async () => {
+      if (!state.ownerScannedItem) return;
+      const { code, amount } = state.ownerScannedItem;
+
+      if (!confirm(`ยืนยันยกเลิกคูปองเดิม [${code}] ยอด ${amount.toFixed(2)} บาท แล้วสร้าง QR Voucher ใหม่ทันที?`)) return;
+
+      const txId = "TX-REISSUE-" + Date.now();
+      btnReissue.disabled = true;
+
+      try {
+        await callEdgeFunction("cancel", { voucher_num: code });
+
+        const createRes = await callEdgeFunction("create", {
+          amount: amount,
+          ref_num: `${txId}**1`,
+          note: `Reissued from: ${code}`,
+          tag: "**1"
+        });
+
+        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V" + Date.now();
+
+        await callEdgeFunction("db_insert", {
+          transaction_id: txId,
+          action_type: "RE_ISSUE_QR",
+          staff_name: `${state.profile.display_name} (Owner)`,
+          total_amount: amount,
+          new_voucher_code: newVoucherCode,
+          old_vouchers: [code],
+          ref_num: `${code} -> ${newVoucherCode}**1`
+        });
+
+        alert(`สร้าง QR Voucher ใหม่สำเร็จ! เลขที่: ${newVoucherCode}`);
+
+        triggerPrintSlip({
+          txId,
+          actionType: "RE-ISSUE QR",
+          staff: `${state.profile.display_name} (Owner)`,
+          amount: amount,
+          newCode: newVoucherCode,
+          olds: [{ desc: `ยกยอดเดิม: ${code}`, amount: amount }]
+        });
+
+        scanInput.value = "";
+        boxPreview.classList.add("hidden");
+        state.ownerScannedItem = null;
+        loadHistory();
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการยกเลิกและสร้าง QR ใหม่: " + err.message);
+        btnReissue.disabled = false;
+      }
+    });
+
+    // --- Combine Vouchers ---
     const inputCombine = document.getElementById("input-combine-code");
     const btnAddCombine = document.getElementById("btn-add-combine");
     const listCombine = document.getElementById("list-combine");
@@ -402,7 +560,7 @@
     btnAddCombine.addEventListener("click", async () => {
       const code = inputCombine.value.trim().toUpperCase();
       if (!code) return;
-      if (state.combineItems.find(item => item.code === code)) return alert("มีเลขคูปองนี้อยู่ในรายการแล้ว");
+      if (state.combineItems.find(item => item.code === code)) return alert("มีรหัสคูปองนี้อยู่ในรายการแล้ว");
 
       try {
         const info = await callEdgeFunction("show", { voucher_num: code });
@@ -430,7 +588,7 @@
         const li = document.createElement("li");
         li.className = "py-2 flex justify-between items-center text-xs";
         li.innerHTML = `
-          <span class="font-medium">${item.code} (${item.amount.toFixed(2)} ฿)</span>
+          <span class="font-bold text-slate-800">${item.code} (${item.amount.toFixed(2)} ฿)</span>
           <button onclick="removeCombineItem(${index})" class="text-red-500 font-bold hover:underline">ลบ</button>
         `;
         listCombine.appendChild(li);
@@ -454,21 +612,18 @@
       const txId = "TX-CMB-" + Date.now();
 
       try {
-        // 1. ยกเลิกคูปองเก่าทีละใบ
         for (const code of oldCodes) {
           await callEdgeFunction("cancel", { voucher_num: code });
         }
 
-        // 2. สร้างคูปองใหม่ตามยอดรวม
         const createRes = await callEdgeFunction("create", {
           amount: totalAmount,
           ref_num: txId,
           note: `Combined from: ${oldCodes.join(", ")}`
         });
 
-        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || "V-" + Date.now();
+        const newVoucherCode = createRes?.data?.voucher_number || createRes?.voucher_number || createRes?.data?.qr_code || "V-" + Date.now();
 
-        // 3. บันทึกลงฐานข้อมูล
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "COMBINE",
@@ -478,14 +633,14 @@
           old_vouchers: oldCodes
         });
 
-        alert("รวมคูปองเสร็จสมบูรณ์! ออกคูปองใหม่เลขที่: " + newVoucherCode);
+        alert("รวมคูปองเสร็จสมบูรณ์! ออก QR Voucher ใหม่เลขที่: " + newVoucherCode);
         triggerPrintSlip({
           txId,
-          actionType: "COMBINE",
+          actionType: "รวมคูปอง",
           staff: state.profile.display_name,
           amount: totalAmount,
           newCode: newVoucherCode,
-          olds: oldCodes
+          olds: state.combineItems.map((item, idx) => ({ desc: `ใบที่ ${idx + 1}: ${item.code}`, amount: item.amount }))
         });
 
         state.combineItems = [];
@@ -563,12 +718,12 @@
           const dateStr = new Date(row.created_at).toLocaleString("th-TH");
           tr.innerHTML = `
             <td class="px-6 py-3 font-mono text-xs">${dateStr}</td>
-            <td class="px-6 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100">${row.action_type}</span></td>
+            <td class="px-6 py-3"><span class="px-2 py-0.5 rounded text-xs font-bold bg-slate-100">${row.action_type}</span></td>
             <td class="px-6 py-3 font-medium text-slate-800">${row.staff_name}</td>
-            <td class="px-6 py-3 font-bold text-emerald-600">${parseFloat(row.total_amount).toFixed(2)} ฿</td>
-            <td class="px-6 py-3 font-mono font-bold text-slate-900">${row.new_voucher_code || "-"}</td>
+            <td class="px-6 py-3 font-black text-emerald-600">${parseFloat(row.total_amount).toFixed(2)} ฿</td>
+            <td class="px-6 py-3 font-mono font-bold text-slate-900">${formatCodeInGroups(row.new_voucher_code) || "-"}</td>
             <td class="px-6 py-3 text-right">
-              ${row.new_voucher_code ? `<button onclick="reprintTx('${row.transaction_id}', '${row.action_type}', '${row.staff_name}', ${row.total_amount}, '${row.new_voucher_code}')" class="text-xs text-amber-600 hover:text-amber-800 font-bold">พิมพ์สลิปอีกครั้ง</button>` : "-"}
+              ${row.new_voucher_code ? `<button onclick="reprintTx('${row.transaction_id}', '${row.action_type}', '${row.staff_name}', ${row.total_amount}, '${row.new_voucher_code}')" class="text-xs text-amber-600 hover:text-amber-800 font-bold underline">พิมพ์ซ้ำ</button>` : "-"}
             </td>
           `;
           tbody.appendChild(tr);
@@ -580,44 +735,75 @@
 
     document.getElementById("btn-refresh-history").addEventListener("click", loadHistory);
 
-    // --- Thermal Print System ---
-    function triggerPrintSlip({ txId, actionType, staff, amount, newCode, olds }) {
-      const nowStr = new Date().toLocaleString("th-TH");
+    // ================= THERMAL PRINT ENGINE (80MM WITH QR CODE) =================
+    function triggerPrintSlip({ txId, actionType, staff, amount, newCode, olds = [] }) {
+      const now = new Date();
+      const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${now.toLocaleTimeString('th-TH')}`;
 
-      // Set Segment 1 (Customer)
+      // ท่อนที่ 1: ลูกค้า
       document.getElementById("slip-tx1").textContent = txId;
-      document.getElementById("slip-date1").textContent = nowStr;
+      document.getElementById("slip-date1").textContent = dateStr;
       document.getElementById("slip-staff1").textContent = staff;
-      document.getElementById("slip-amount1").textContent = `${amount.toFixed(2)} ฿`;
-      document.getElementById("slip-code1").textContent = newCode;
+      document.getElementById("slip-amount1").textContent = `${amount.toFixed(2)} บาท`;
 
+      const oldList1 = document.getElementById("slip-old-items1");
+      oldList1.innerHTML = "";
+      olds.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "flex justify-between";
+        div.innerHTML = `<span>${item.desc || item}</span><span>${item.amount ? item.amount.toFixed(2) + ' บาท' : ''}</span>`;
+        oldList1.appendChild(div);
+      });
+
+      // ท่อนที่ 2: ร้านค้า / ยิงสแกนที่ตู้
+      document.getElementById("slip-tx2").textContent = txId;
+      document.getElementById("slip-date2").textContent = dateStr;
+      document.getElementById("slip-staff2").textContent = staff;
+      document.getElementById("slip-amount2").textContent = `${amount.toFixed(2)} บาท`;
+
+      const oldList2 = document.getElementById("slip-old-items2");
+      oldList2.innerHTML = "";
+      olds.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "flex justify-between";
+        div.innerHTML = `<span>${item.desc || item}</span><span>${item.amount ? item.amount.toFixed(2) + ' ฿' : ''}</span>`;
+        oldList2.appendChild(div);
+      });
+
+      document.getElementById("slip-code-formatted").textContent = formatCodeInGroups(newCode);
+
+      // สร้าง QR CODE ขนาด 195px ชัดเจนสำหรับหัวอ่านตู้จ่ายเงิน
+      const qrContainer = document.getElementById("qrcode-container");
+      qrContainer.innerHTML = "";
       if (newCode && newCode !== "-") {
-        JsBarcode("#barcode-1", newCode, {
-          format: "CODE128",
-          width: 2,
-          height: 50,
-          displayValue: false
+        new QRCode(qrContainer, {
+          text: newCode.replace(/\s+/g, ''),
+          width: 195,
+          height: 195,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
         });
       }
 
-      // Set Segment 2 (Merchant)
-      document.getElementById("slip-tx2").textContent = txId;
-      document.getElementById("slip-action2").textContent = actionType;
-      document.getElementById("slip-olds2").textContent = (olds && olds.length > 0) ? olds.join(", ") : "-";
-      document.getElementById("slip-new2").textContent = newCode;
-      document.getElementById("slip-amount2").textContent = `${amount.toFixed(2)} ฿`;
-      document.getElementById("slip-staff2").textContent = staff;
-      document.getElementById("slip-date2").textContent = nowStr;
-
-      // สั่งพิมพ์
+      // สั่งพิมพ์ออกเครื่องพิมพ์ความร้อน
       const slip = document.getElementById("thermal-slip");
       slip.classList.remove("hidden");
-      window.print();
-      slip.classList.add("hidden");
+      setTimeout(() => {
+        window.print();
+        slip.classList.add("hidden");
+      }, 200);
     }
 
     window.reprintTx = function(txId, actionType, staff, amount, newCode) {
-      triggerPrintSlip({ txId, actionType, staff, amount: parseFloat(amount), newCode, olds: ["(Re-print)"] });
+      triggerPrintSlip({
+        txId,
+        actionType: "REPRINT",
+        staff: staff,
+        amount: parseFloat(amount),
+        newCode: newCode,
+        olds: [{ desc: "พิมพ์ซ้ำ (Reprint)", amount: parseFloat(amount) }]
+      });
     };
   </script>
 </body>
