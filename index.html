@@ -356,57 +356,67 @@
       return json;
     }
 
-    // ฟังก์ชันค้นหาและเจาะจงเฉพาะเลข Voucher แท้จาก Tiger Pay เท่านั้น (ไม่เอาเลขบิลเด็ดขาด)
+// ฟังก์ชันสกัดเลข Voucher ที่รองรับทุกโครงสร้างของ Tiger Pay
     function extractTigerVoucherCode(createRes) {
       console.log("[Tiger-API] Raw Create Response:", createRes);
 
+      if (!createRes) {
+        throw new Error("Tiger API ไม่ได้ส่งข้อมูลตอบกลับมา");
+      }
+
+      // 1. ถ้า Response ส่งกลับมาเป็น String รหัสคูปองตรงๆ
+      if (typeof createRes === 'string' && createRes.trim().length > 3) {
+        return createRes.trim();
+      }
+
       let foundCode = null;
 
-      // รายการ Key ที่เป็นไปได้ของเลข Voucher
-      const possibleKeys = [
-        'voucher_number', 'vouchernumber', 'voucher_no', 'voucherno',
-        'voucher_code', 'vouchercode', 'voucher', 'code',
-        'qr_data', 'qr_code', 'qr'
+      // 2. รายชื่อคีย์ทั้งหมดที่ Tiger หรือระบบตู้มักจะใช้ส่งเลขคูปองกลับมา
+      const keysToSearch = [
+        'voucher_number', 'voucher_no', 'voucher_code', 'vouchernumber', 'voucherno', 'vouchercode',
+        'code', 'voucher', 'barcode', 'qr_code', 'qr_data', 'qr', 'coupon_code', 'ticket_no'
       ];
 
-      // 1. ตรวจสอบที่ Root Object
-      if (createRes && typeof createRes === 'object') {
-        for (const k of possibleKeys) {
-          if (createRes[k] && typeof createRes[k] === 'string' && !createRes[k].startsWith('TX-')) {
-            foundCode = createRes[k];
-            break;
+      // ฟังก์ชันช่วยเจาะหาค่าใน Object ซ้อนกัน (Deep Search)
+      function searchRecursive(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        
+        for (const k of keysToSearch) {
+          if (obj[k] && typeof obj[k] === 'string' && !obj[k].startsWith('TX-')) {
+            foundCode = obj[k];
+            return;
+          } else if (obj[k] && typeof obj[k] === 'number') {
+            foundCode = String(obj[k]);
+            return;
           }
         }
 
-        // 2. ถ้ายังไม่เจอ ตรวจสอบใน data หรือ result
-        const sub = createRes.data || createRes.result;
-        if (!foundCode && sub) {
-          if (typeof sub === 'string' && !sub.startsWith('TX-')) {
-            foundCode = sub;
-          } else if (typeof sub === 'object') {
-            for (const k of possibleKeys) {
-              if (sub[k] && typeof sub[k] === 'string' && !sub[k].startsWith('TX-')) {
-                foundCode = sub[k];
-                break;
-              }
-            }
+        // ค้นหาใน data, result, หรือ response
+        for (const childKey of Object.keys(obj)) {
+          if (typeof obj[childKey] === 'object' && !foundCode) {
+            searchRecursive(obj[childKey]);
           }
         }
       }
 
-      // 3. ตรวจสอบว่าได้รหัสจริงหรือไม่
+      searchRecursive(createRes);
+
+      // 3. ถ้ายังไม่เจอ ให้ตรวจจับ String ใดๆ ในก้อน JSON ที่เป็นตัวเลขล้วน 10-16 หลัก (รูปแบบ Voucher ของตู้)
       if (!foundCode) {
-        console.error("ไม่พบเลขคูปอง Voucher ใน Response:", createRes);
-        throw new Error("ระบบออกคูปองสำเร็จ แต่ไม่พบเลข Voucher จาก Tiger API กรุณาตรวจดู Response ใน Console");
+        const jsonStr = JSON.stringify(createRes);
+        const match = jsonStr.match(/\b\d{10,16}\b/);
+        if (match) {
+          foundCode = match[0];
+        }
+      }
+
+      // 4. กรณีหาไม่เจอจริงๆ: แสดง Alert โครงสร้างจริงให้เห็นทันทีเพื่อนำมาปรับแก้
+      if (!foundCode) {
+        alert("โครงสร้างข้อมูลที่ Tiger ตอบกลับมา:\n" + JSON.stringify(createRes, null, 2));
+        throw new Error("ระบบออกคูปองสำเร็จ แต่ไม่พบเลข Voucher จาก Tiger API");
       }
 
       return String(foundCode).trim();
-    }
-
-    function formatCodeInGroups(code) {
-      if (!code) return "";
-      const cleaned = String(code).replace(/\s+/g, '');
-      return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
     }
 
     // --- Authentication ---
