@@ -82,14 +82,14 @@
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ ================= -->
+<!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ ================= -->
       <section id="func-reissue" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
             <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-lg">⚡</span>
             <div>
               <h2 class="text-lg font-bold text-slate-900">1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue)</h2>
-              <p class="text-xs text-slate-500">สแกนรหัสคูปองเดิม เพื่อยกเลิกและสร้าง QR Voucher ใหม่จากระบบ Tiger ทันที</p>
+              <p class="text-xs text-slate-500">สแกนรหัสคูปองเดิม ตรวจสอบยอด และกำหนดยอดเพื่อออก QR Voucher ใหม่</p>
             </div>
           </div>
           <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded font-medium">Quick Action</span>
@@ -112,18 +112,27 @@
           </div>
         </div>
 
-        <div id="box-reissue-preview" class="hidden mt-4 p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-xl flex items-center justify-between text-sm">
-          <div>
-            <span class="text-slate-500 font-medium">คูปองเดิม:</span>
-            <span id="preview-reissue-code" class="ml-2 font-mono font-bold text-indigo-900"></span>
+        <!-- กล่องพรีวิวและช่องใส่ยอดเงินสร้างใหม่ -->
+        <div id="box-reissue-preview" class="hidden mt-4 p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-indigo-100 text-sm">
+            <div>
+              <span class="text-slate-500 font-medium">คูปองเดิม:</span>
+              <span id="preview-reissue-code" class="ml-2 font-mono font-bold text-indigo-900 text-base"></span>
+            </div>
+            <div>
+              <span class="text-slate-500 font-medium">ยอดคงเหลือเดิมจากตู้:</span>
+              <span id="preview-reissue-amount" class="ml-2 font-bold text-slate-700 text-base">0.00 บาท</span>
+            </div>
           </div>
-          <div>
-            <span class="text-slate-500 font-medium">มูลค่าเดิม:</span>
-            <span id="preview-reissue-amount" class="ml-2 font-bold text-emerald-600 text-base"></span>
+          
+          <!-- ช่องสำหรับปรับยอดสร้างใหม่ -->
+          <div class="flex items-center gap-3">
+            <label class="text-xs font-bold text-indigo-950 whitespace-nowrap">ระบุยอดเงินสร้างใหม่ (บาท):</label>
+            <input type="number" step="any" id="input-reissue-new-amount" placeholder="0.00" class="w-48 px-3 py-1.5 border-2 border-indigo-400 rounded-lg text-lg font-black text-emerald-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+            <span class="text-xs text-slate-500">* สามารถปรับเปลี่ยนยอดก่อนกดยืนยันได้</span>
           </div>
         </div>
       </section>
-
       <!-- ================= FUNCTION 2: ออกคูปองพิเศษ (สร้าง Voucher) ================= -->
       <section id="panel-owner" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
@@ -473,29 +482,57 @@
       loadHistory();
     }
 
-    // ================= 1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue) =================
+// ================= 1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue) =================
     const inputReissue = document.getElementById("input-reissue-code");
     const btnReissueCheck = document.getElementById("btn-reissue-check");
     const btnReissueSubmit = document.getElementById("btn-reissue-submit");
     const boxReissuePreview = document.getElementById("box-reissue-preview");
     const previewReissueCode = document.getElementById("preview-reissue-code");
     const previewReissueAmount = document.getElementById("preview-reissue-amount");
+    const inputReissueNewAmount = document.getElementById("input-reissue-new-amount");
+
+    // ฟังก์ชันช่วยดึงค่ายอดเงินที่ยืดหยุ่นจาก Tiger Response
+    function parseVoucherAmount(info) {
+      console.log("[Tiger-API] Check Voucher Info Raw:", info);
+      let val = info?.amount ?? 
+                info?.balance ?? 
+                info?.total_amount ?? 
+                info?.value ?? 
+                info?.data?.amount ?? 
+                info?.data?.balance ?? 
+                info?.data?.total_amount ?? 
+                info?.result?.amount ?? 
+                0;
+      return parseFloat(val) || 0;
+    }
 
     btnReissueCheck.addEventListener("click", async () => {
       const code = inputReissue.value.trim().replace(/\s+/g, '');
       if (!code) return alert("กรุณาระบุเลขคูปอง");
 
+      btnReissueCheck.textContent = "กำลังตรวจ...";
+      btnReissueCheck.disabled = true;
+
       try {
         const info = await callEdgeFunction("show", { voucher_num: code });
-        const amount = parseFloat(info?.amount || info?.data?.amount || 0);
+        const oldAmount = parseVoucherAmount(info);
 
-        state.reissueItem = { code, amount };
+        state.reissueItem = { code, oldAmount };
         previewReissueCode.textContent = formatCodeInGroups(code);
-        previewReissueAmount.textContent = `${amount.toFixed(2)} บาท`;
+        previewReissueAmount.textContent = `${oldAmount.toFixed(2)} บาท`;
+        
+        // กำหนดยอดเริ่มต้นในช่องสร้างใหม่เป็นยอดเดิม (หรือแก้ไขได้)
+        inputReissueNewAmount.value = oldAmount > 0 ? oldAmount.toFixed(2) : "";
+        
         boxReissuePreview.classList.remove("hidden");
         btnReissueSubmit.disabled = false;
       } catch (err) {
         alert("ไม่พบคูปอง หรือดึงข้อมูลไม่สำเร็จ: " + err.message);
+        boxReissuePreview.classList.add("hidden");
+        btnReissueSubmit.disabled = true;
+      } finally {
+        btnReissueCheck.textContent = "ตรวจสอบยอด";
+        btnReissueCheck.disabled = false;
       }
     });
 
@@ -508,25 +545,30 @@
 
     btnReissueSubmit.addEventListener("click", async () => {
       if (!state.reissueItem) return;
-      const { code, amount } = state.reissueItem;
+      const { code } = state.reissueItem;
+      const targetAmount = parseFloat(inputReissueNewAmount.value);
 
-      if (!confirm(`ยืนยันยกเลิกคูปอง [${code}] ยอด ${amount.toFixed(2)} บาท และออก QR Voucher ใหม่ทันที?`)) return;
+      if (isNaN(targetAmount) || targetAmount <= 0) {
+        return alert("กรุณาระบุยอดเงินสร้างใหม่ที่ถูกต้องและมากกว่า 0 บาท");
+      }
+
+      if (!confirm(`ยืนยันยกเลิกคูปองเดิม [${code}]\nและสร้างคูปองใหม่ยอด: ${targetAmount.toFixed(2)} บาท?`)) return;
 
       const txId = "TX-" + Date.now();
       btnReissueSubmit.disabled = true;
 
       try {
-        // 1. ยกเลิกบิลเดิม
+        // 1. สั่งยกเลิกบิลเดิม
         await callEdgeFunction("cancel", { voucher_num: code });
 
-        // 2. ออก Voucher ใหม่
+        // 2. สร้าง Voucher ใหม่ตามยอดที่ระบุ
         const createRes = await callEdgeFunction("create", {
-          amount: amount,
+          amount: targetAmount,
           ref_num: txId,
           note: `Reissued from: ${code}`
         });
 
-        // สกัดเฉพาะเลข Voucher จาก Tiger Pay
+        // สกัดเฉพาะเลข Voucher แท้จาก Tiger Pay
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         // 3. บันทึก Transaction
@@ -534,7 +576,7 @@
           transaction_id: txId,
           action_type: "REISSUE",
           staff_name: state.profile.display_name,
-          total_amount: amount,
+          total_amount: targetAmount,
           new_voucher_code: realTigerVoucherCode,
           old_vouchers: [code],
           ref_num: `${code} -> ${realTigerVoucherCode}`
@@ -542,16 +584,18 @@
 
         alert("ยกเลิกและออกคูปองใหม่สำเร็จ! เลขที่: " + realTigerVoucherCode);
 
+        // 4. พิมพ์สลิปความร้อน
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินยกยอดคูปอง",
           staff: state.profile.display_name,
-          amount: amount,
+          amount: targetAmount,
           voucherCode: realTigerVoucherCode,
-          olds: [{ desc: `บิลที่ 1:`, code: code, amount: amount }]
+          olds: [{ desc: `บิลเดิม:`, code: code, amount: targetAmount }]
         });
 
         inputReissue.value = "";
+        inputReissueNewAmount.value = "";
         boxReissuePreview.classList.add("hidden");
         state.reissueItem = null;
         loadHistory();
