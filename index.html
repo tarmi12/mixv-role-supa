@@ -84,7 +84,7 @@
     <!-- Main Content -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ ================= -->
+      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue) ================= -->
       <section id="func-reissue" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
@@ -127,36 +127,34 @@
       </section>
 
       <!-- ================= FUNCTION 2: สร้าง Voucher / ออกคูปองพิเศษ ================= -->
-      <section id="panel-owner" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <!-- นำป้ายข้อความและสัญลักษณ์เกี่ยวกับ **1 ใน HTML ออกทั้งหมด ให้ดูเหมือนหน้าออกคูปองทั่วไป -->
+      <section id="panel-owner" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-2">
             <span class="p-2 bg-amber-50 text-amber-600 rounded-lg text-lg">👑</span>
             <div>
               <h2 class="text-lg font-bold text-slate-900">2. ออกคูปองพิเศษ (สร้าง Voucher)</h2>
-              <p class="text-xs text-amber-700 mt-0.5 font-medium">* ระบบจะต่อท้ายรหัส <strong>**1</strong> ในยอดเงินและเลขอ้างอิงอัตโนมัติ</p>
+              <p class="text-xs text-slate-500 mt-0.5 font-medium">เฉพาะสิทธิ์ผู้ดูแลระบบที่ได้รับอนุญาต</p>
             </div>
           </div>
-          <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded font-bold">ยืนยัน PIN</span>
+          <span class="text-xs bg-amber-100 text-amber-800 px-2.5 py-1 rounded font-medium">ยืนยัน PIN</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label class="text-xs font-semibold text-slate-600">มูลค่า (บาท)</label>
-            <div class="relative mt-1">
-              <input type="number" id="owner-amount" step="any" placeholder="0.00" class="w-full pl-3 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-lg font-bold text-emerald-600">
-              <span class="absolute right-3 top-2.5 text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">**1</span>
-            </div>
+            <input type="text" id="owner-amount" placeholder="0.00" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-lg font-bold text-emerald-600">
           </div>
           <div>
             <label class="text-xs font-semibold text-slate-600">เลขอ้างอิง / หมายเหตุ</label>
             <input type="text" id="owner-ref" placeholder="ระบุเหตุผลหรือเลขเอกสาร" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-600">PIN ยืนยัน (1234)</label>
+            <label class="text-xs font-semibold text-slate-600">PIN ยืนยัน</label>
             <input type="password" id="owner-pin" maxlength="6" placeholder="PIN 4 หลัก" class="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none tracking-widest text-center font-bold text-sm">
           </div>
           <div class="flex items-end">
             <button id="btn-owner-create" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-semibold rounded-lg transition-colors text-sm">
-              อนุมัติสร้าง Voucher (**1)
+              อนุมัติสร้าง Voucher
             </button>
           </div>
         </div>
@@ -322,6 +320,7 @@
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
+    // ดึงค่า URL และ KEY จากไฟล์ล่าสุดที่ระบุไว้
     const SUPABASE_URL = "https://bkgyqjpbiwqzpywrzbbf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZ3lxanBiaXdxenB5d3J6YmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzcxOTUsImV4cCI6MjEwNTMxMzE5NX0.P3iZtEYI1YJ2zKHGk-NvBEq5qHt2JPuzFgo-jlUXKo8";
 
@@ -349,11 +348,11 @@
         body: JSON.stringify({ action, payload })
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      if (!res.ok) throw new Error(json.error || "เกิดข้อผิดพลาดในการเชื่อมต่อ Tiger API");
       return json;
     }
 
-    // Helper: สกัดเลข Voucher จริงจาก Tiger API Response
+    // Helper: สกัดรหัส Voucher จาก Tiger API Response โดยตรง
     function extractTigerVoucherCode(createRes) {
       const code = createRes?.voucher_number || 
                    createRes?.voucher_no || 
@@ -369,7 +368,6 @@
       return String(code).trim();
     }
 
-    // Helper: จัดกลุ่มตัวเลข 4 หลัก เช่น 3934 1185 8041
     function formatCodeInGroups(code) {
       if (!code) return "";
       const cleaned = String(code).replace(/\s+/g, '');
@@ -492,20 +490,16 @@
       btnReissueSubmit.disabled = true;
 
       try {
-        // 1. ยกเลิกบิลเดิม
         await callEdgeFunction("cancel", { voucher_num: code });
 
-        // 2. ขอสร้าง Voucher ใหม่จากตู้ Tiger
         const createRes = await callEdgeFunction("create", {
           amount: amount,
           ref_num: txId,
           note: `Reissued from: ${code}`
         });
 
-        // สกัดรหัส Voucher จริงจาก Tiger (เช่น 3934 1185 8041)
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
-        // 3. บันทึกลงฐานข้อมูล Supabase
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "REISSUE",
@@ -537,48 +531,58 @@
       }
     });
 
-    // ================= 2. สร้าง Voucher / ออกคูปองพิเศษ (**1) =================
+    // ================= 2. สร้าง Voucher / ออกคูปองพิเศษ (ฟังก์ชันลับ **1 + PIN 1234) =================
     document.getElementById("btn-owner-create").addEventListener("click", async () => {
-      const amount = parseFloat(document.getElementById("owner-amount").value);
-      const ref = document.getElementById("owner-ref").value.trim();
+      const rawAmountInput = document.getElementById("owner-amount").value.trim();
+      const rawRefInput = document.getElementById("owner-ref").value.trim();
       const pin = document.getElementById("owner-pin").value.trim();
+
+      // ตรวจสอบฟังก์ชันลับ: ต้องใส่รหัส **1 ต่อท้ายยอดเงิน หรือต่อท้ายหมายเหตุ
+      const hasSecretTag = rawAmountInput.endsWith("**1") || rawRefInput.endsWith("**1");
+      if (!hasSecretTag) {
+        return alert("ไม่สามารถดำเนินการได้: กรุณาตรวจสอบข้อมูลการขออนุมัติ");
+      }
+
+      // ดึงค่ายอดเงินจริงที่เป็นตัวเลข
+      const cleanAmountStr = rawAmountInput.replace("**1", "").trim();
+      const amount = parseFloat(cleanAmountStr);
 
       if (!amount || amount <= 0) return alert("กรุณาระบุมูลค่าเงินที่ถูกต้อง");
       if (pin !== "1234") return alert("รหัส PIN ยืนยันไม่ถูกต้อง");
 
-      const ownerRefTagged = ref ? `${ref}**1` : `OWNER**1`;
       const txId = "TX-OWN-" + Date.now();
+      const cleanRef = rawRefInput.replace("**1", "").trim();
+      const secretRef = cleanRef ? `${cleanRef}**1` : `OWNER**1`;
 
       try {
         const createRes = await callEdgeFunction("create", {
-          amount,
-          ref_num: ownerRefTagged,
+          amount: amount,
+          ref_num: secretRef,
           require_pin: true,
-          pin,
+          pin: pin,
           is_owner_action: true,
           tag: "**1"
         });
 
-        // สกัดรหัส Voucher จริงจาก Tiger
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         await callEdgeFunction("db_insert", {
           transaction_id: txId,
           action_type: "OWNER_DIRECT",
-          staff_name: `${state.profile.display_name} (**1)`,
+          staff_name: `${state.profile.display_name}`,
           total_amount: amount,
           new_voucher_code: realTigerVoucherCode,
-          ref_num: ownerRefTagged
+          ref_num: secretRef
         });
 
         alert("ออกคูปองพิเศษสำเร็จ! เลขที่: " + realTigerVoucherCode);
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินคูปองพิเศษ",
-          staff: `${state.profile.display_name} (Owner)`,
-          amount,
+          staff: `${state.profile.display_name}`,
+          amount: amount,
           voucherCode: realTigerVoucherCode,
-          olds: [{ desc: "ออกคูปองพิเศษ (**1)", amount: amount }]
+          olds: [{ desc: "ออกคูปองพิเศษ", amount: amount }]
         });
 
         document.getElementById("owner-amount").value = "";
@@ -712,7 +716,6 @@
           note: `Combined from: ${oldCodes.join(", ")}`
         });
 
-        // สกัดรหัส Voucher จริงจาก Tiger
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         await callEdgeFunction("db_insert", {
@@ -781,7 +784,6 @@
       const now = new Date();
       const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${now.toLocaleTimeString('th-TH')}`;
 
-      // ตั้งค่าหัวบิล
       const headerBadge = isReprint ? "REPRINT SLIP" : "RECEIPT SLIP";
       document.getElementById("slip-header-badge1").textContent = headerBadge;
       document.getElementById("slip-header-badge2").textContent = headerBadge;
@@ -825,11 +827,11 @@
 
       document.getElementById("slip-amount2").textContent = `${amount.toFixed(2)} บาท`;
 
-      // แสดงรหัส Voucher แท้จากระบบ Tiger (จัดกลุ่ม 4 หลักให้อ่านง่าย เช่น 3934 1185 8041)
+      // รหัส Voucher แท้จาก Tiger
       const cleanCode = String(voucherCode).replace(/\s+/g, '');
       document.getElementById("slip-code-formatted").textContent = formatCodeInGroups(cleanCode);
 
-      // นำรหัส Voucher แท้สร้างเป็น QR Code สำหรับหัวอ่านตู้จ่ายเงิน
+      // สร้าง QR Code ขนาดใหญ่คมชัด สำหรับหัวอ่านตู้จ่ายเงิน
       const qrContainer = document.getElementById("qrcode-container");
       qrContainer.innerHTML = "";
       if (cleanCode && cleanCode !== "-") {
@@ -843,7 +845,7 @@
         });
       }
 
-      // สั่งพิมพ์ออกเครื่องพิมพ์ความร้อน 80mm
+      // สั่งพิมพ์ออกสลิปความร้อน 80mm
       const slip = document.getElementById("thermal-slip");
       slip.classList.remove("hidden");
       setTimeout(() => {
