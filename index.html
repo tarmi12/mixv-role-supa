@@ -11,6 +11,7 @@
   <style>
     * { font-family: 'Prompt', sans-serif; }
     
+    /* สไตล์จัดพิมพ์สลิปความร้อน 80mm ให้ดำสนิท ตัวหนา คมชัดตรงตามสลิปจริง */
     @media print {
       body * { visibility: hidden; }
       #thermal-slip, #thermal-slip * { visibility: visible; }
@@ -66,6 +67,7 @@
 
   <!-- ================= DASHBOARD VIEW ================= -->
   <div id="view-dashboard" class="hidden min-h-screen flex flex-col">
+    <!-- Navbar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
       <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div class="flex items-center space-x-3">
@@ -80,60 +82,41 @@
       </div>
     </header>
 
+    <!-- Main Content -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-<!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ ================= -->
+      <!-- ================= FUNCTION 1: ยกเลิกบิลและสร้างใหม่ (ยิงยกเลิกแล้วออกใบใหม่ทันที) ================= -->
       <section id="func-reissue" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
             <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-lg">⚡</span>
             <div>
-              <h2 class="text-lg font-bold text-slate-900">1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue)</h2>
-              <p class="text-xs text-slate-500">สแกนรหัสคูปองเดิม ตรวจสอบยอด และกำหนดยอดเพื่อออก QR Voucher ใหม่</p>
+              <h2 class="text-lg font-bold text-slate-900">1. ยกเลิกบิลและสร้างใหม่ (Scan Cancel & Re-issue)</h2>
+              <p class="text-xs text-slate-500">ยิง QR คูปองเดิม ระบุยอดที่ต้องการสร้างใหม่ แล้วกดยกเลิกพร้อมออกคูปองใหม่ทันที</p>
             </div>
           </div>
           <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded font-medium">Quick Action</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mt-4">
-          <div class="md:col-span-3">
-            <label class="text-xs font-semibold text-slate-600">ยิงสแกน QR หรือกรอกเลขคูปองเดิม</label>
-            <div class="flex gap-2 mt-1">
-              <input type="text" id="input-reissue-code" placeholder="สแกนหรือระบุเลขคูปอง..." class="flex-1 px-4 py-2.5 border rounded-lg uppercase tracking-wider text-base font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-              <button id="btn-reissue-check" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-sm transition">
-                ตรวจสอบยอด
-              </button>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mt-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-600">ยิงสแกน QR หรือเลขคูปองเดิม</label>
+            <input type="text" id="input-reissue-code" placeholder="สแกนหรือพิมพ์เลขคูปองเดิม..." class="mt-1 w-full px-4 py-2.5 border rounded-lg uppercase tracking-wider text-base font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
           <div>
-            <button id="btn-reissue-submit" disabled class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-lg transition text-sm">
-              ยกเลิกและสร้างใหม่
+            <label class="text-xs font-semibold text-slate-600">ระบุยอดเงินสร้างใหม่ (บาท)</label>
+            <input type="number" step="any" id="input-reissue-amount" placeholder="0.00" class="mt-1 w-full px-4 py-2.5 border-2 border-indigo-400 rounded-lg text-lg font-black text-emerald-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+          </div>
+          <div>
+            <button id="btn-reissue-submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition text-base shadow-sm">
+              ยกเลิกคูปองเดิม & ออกใบใหม่ทันที
             </button>
           </div>
         </div>
-
-        <!-- กล่องพรีวิวและช่องใส่ยอดเงินสร้างใหม่ -->
-        <div id="box-reissue-preview" class="hidden mt-4 p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-indigo-100 text-sm">
-            <div>
-              <span class="text-slate-500 font-medium">คูปองเดิม:</span>
-              <span id="preview-reissue-code" class="ml-2 font-mono font-bold text-indigo-900 text-base"></span>
-            </div>
-            <div>
-              <span class="text-slate-500 font-medium">ยอดคงเหลือเดิมจากตู้:</span>
-              <span id="preview-reissue-amount" class="ml-2 font-bold text-slate-700 text-base">0.00 บาท</span>
-            </div>
-          </div>
-          
-          <!-- ช่องสำหรับปรับยอดสร้างใหม่ -->
-          <div class="flex items-center gap-3">
-            <label class="text-xs font-bold text-indigo-950 whitespace-nowrap">ระบุยอดเงินสร้างใหม่ (บาท):</label>
-            <input type="number" step="any" id="input-reissue-new-amount" placeholder="0.00" class="w-48 px-3 py-1.5 border-2 border-indigo-400 rounded-lg text-lg font-black text-emerald-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-            <span class="text-xs text-slate-500">* สามารถปรับเปลี่ยนยอดก่อนกดยืนยันได้</span>
-          </div>
-        </div>
       </section>
+
       <!-- ================= FUNCTION 2: ออกคูปองพิเศษ (สร้าง Voucher) ================= -->
+      <!-- หน้า HTML ปกติ ไม่มีคำว่า **1 หลุดไป เพื่อรักษาฟังก์ชันลับของ Owner -->
       <section id="panel-owner" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-2">
@@ -169,14 +152,14 @@
       <!-- Grid แบ่ง 2 ฝั่งสำหรับ ฟังก์ชัน 4 และ 3 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- ================= FUNCTION 4: รวมบิลและสร้าง ================= -->
+        <!-- ================= FUNCTION 4: รวมบิลและสร้าง (Combine Vouchers) ================= -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center space-x-2 mb-3">
               <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-base">🔄</span>
               <h2 class="text-lg font-bold text-slate-900">4. รวมบิลและสร้าง (Combine Vouchers)</h2>
             </div>
-            <p class="text-xs text-slate-500 mb-4">สแกนรหัสคูปองเก่าหลายๆ ใบ เพื่อยกเลิกและรวมยอดเป็น 1 ใบใหม่จากระบบ Tiger</p>
+            <p class="text-xs text-slate-500 mb-4">สแกนรหัสคูปองเดิมหลายๆ ใบ ระบุยอดแต่ละใบ เพื่อยกเลิกและรวมยอดเป็น 1 ใบใหม่จากตู้ Tiger</p>
             <div class="space-y-3">
               <div class="flex gap-2">
                 <input type="text" id="input-combine-code" placeholder="สแกนหรือพิมพ์เลขคูปอง" class="flex-1 px-3 py-2 border rounded-lg uppercase tracking-wider text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
@@ -201,29 +184,21 @@
           <div>
             <div class="flex items-center space-x-2 mb-3">
               <span class="p-2 bg-red-50 text-red-600 rounded-lg text-base">🔍</span>
-              <h2 class="text-lg font-bold text-slate-900">3. ยกเลิกรายการ (Check & Cancel)</h2>
+              <h2 class="text-lg font-bold text-slate-900">3. ยกเลิกรายการ (Cancel Voucher)</h2>
             </div>
-            <p class="text-xs text-slate-500 mb-4">ตรวจสอบข้อมูลสถานะ และกดยกเลิกคูปองรายใบ</p>
+            <p class="text-xs text-slate-500 mb-4">ระบุเลขคูปองที่ต้องการยกเลิกออกจากระบบตู้ Tiger ทันที</p>
             <div class="space-y-3">
               <div class="flex gap-2">
-                <input type="text" id="input-check-code" placeholder="ระบุเลขคูปองที่ต้องการเช็ค" class="flex-1 px-3 py-2 border rounded-lg uppercase tracking-wider text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                <button id="btn-check-voucher" class="px-4 py-2 bg-slate-800 text-white font-semibold rounded-lg text-sm">ตรวจดู</button>
-              </div>
-              <div id="box-voucher-detail" class="hidden p-3 bg-slate-50 border rounded-lg space-y-1 text-sm">
-                <div class="flex justify-between"><span class="text-slate-500">สถานะ:</span><span id="res-status" class="font-bold"></span></div>
-                <div class="flex justify-between"><span class="text-slate-500">มูลค่า:</span><span id="res-amount" class="font-bold text-emerald-600"></span></div>
-                <div class="flex justify-between"><span class="text-slate-500">วันหมดอายุ:</span><span id="res-expire"></span></div>
+                <input type="text" id="input-check-code" placeholder="ระบุเลขคูปองที่ต้องการยกเลิก" class="flex-1 px-3 py-2 border rounded-lg uppercase tracking-wider text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <button id="btn-cancel-direct" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm">ยกเลิกทันที</button>
               </div>
             </div>
           </div>
-          <button id="btn-cancel-voucher" disabled class="mt-4 w-full py-3 bg-red-500 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-lg transition text-sm">
-            ยกเลิกรายการคูปองนี้
-          </button>
         </div>
 
       </div>
 
-      <!-- ================= FUNCTION 5: หน้ารายงาน ================= -->
+      <!-- ================= FUNCTION 5: หน้ารายงาน (Transaction History) ================= -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center space-x-2">
@@ -259,7 +234,7 @@
   <!-- ================= PRINTABLE THERMAL SLIP CONTAINER (80MM EXACT REAL FORMAT) ================= -->
   <div id="thermal-slip" class="hidden text-black font-sans leading-tight">
     
-    <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า -->
+    <!-- ท่อนที่ 1: เอกสารสำหรับลูกค้า (ตรงตามสลิปจริง) -->
     <div class="slip-segment text-left">
       <div class="border border-black py-1 text-center font-bold text-[13px] tracking-wide mb-1">
         *** <span id="slip-header-badge1">REPRINT SLIP</span> (<span id="slip-staff-id1">Staff-01</span>) ***
@@ -286,7 +261,7 @@
     <!-- เส้นประตัดกระดาษ -->
     <div class="page-break"></div>
 
-    <!-- ท่อนที่ 2: ร้านค้าเก็บไว้ / สแกนที่ตู้จ่ายเงิน -->
+    <!-- ท่อนที่ 2: ร้านค้าเก็บไว้ / สแกนที่ตู้จ่ายเงิน (QR CODE ตัวจริง) -->
     <div class="slip-segment text-center pt-1">
       <div class="border border-black py-1 text-center font-bold text-[13px] tracking-wide mb-1">
         *** <span id="slip-header-badge2">REPRINT SLIP</span> (<span id="slip-staff-id2">Staff-01</span>) ***
@@ -324,6 +299,14 @@
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
+    // ฟังก์ชันจัดกลุ่ม 4 หลัก (ประกาศบนสุด ป้องกันปัญหา ReferenceError)
+    function formatCodeInGroups(code) {
+      if (!code) return "";
+      const cleaned = String(code).replace(/\s+/g, '');
+      return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+    }
+
+    // SUPABASE CONFIG จาก userlogin tiger_2.txt
     const SUPABASE_URL = "https://bkgyqjpbiwqzpywrzbbf.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrZ3lxanBiaXdxenB5d3J6YmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MzcxOTUsImV4cCI6MjEwNTMxMzE5NX0.P3iZtEYI1YJ2zKHGk-NvBEq5qHt2JPuzFgo-jlUXKo8";
 
@@ -331,8 +314,7 @@
       user: null,
       profile: null,
       sessionToken: null,
-      combineItems: [],
-      reissueItem: null
+      combineItems: []
     };
 
     function getHeaders(token = state.sessionToken) {
@@ -356,31 +338,21 @@
       return json;
     }
 
-// ฟังก์ชันสกัดเลข Voucher ที่รองรับทุกโครงสร้างของ Tiger Pay
+    // ฟังก์ชันค้นหาและเจาะจงเฉพาะเลข Voucher แท้จาก Tiger Pay (ตัดเลขบิล TX- ทิ้งแน่นอน)
     function extractTigerVoucherCode(createRes) {
       console.log("[Tiger-API] Raw Create Response:", createRes);
 
-      if (!createRes) {
-        throw new Error("Tiger API ไม่ได้ส่งข้อมูลตอบกลับมา");
-      }
+      if (!createRes) throw new Error("Tiger API ไม่ได้ส่งข้อมูลตอบกลับมา");
+      if (typeof createRes === 'string' && createRes.trim().length > 3) return createRes.trim();
 
-      // 1. ถ้า Response ส่งกลับมาเป็น String รหัสคูปองตรงๆ
-      if (typeof createRes === 'string' && createRes.trim().length > 3) {
-        return createRes.trim();
-      }
-
-      let foundCode = null;
-
-      // 2. รายชื่อคีย์ทั้งหมดที่ Tiger หรือระบบตู้มักจะใช้ส่งเลขคูปองกลับมา
       const keysToSearch = [
         'voucher_number', 'voucher_no', 'voucher_code', 'vouchernumber', 'voucherno', 'vouchercode',
-        'code', 'voucher', 'barcode', 'qr_code', 'qr_data', 'qr', 'coupon_code', 'ticket_no'
+        'code', 'voucher', 'barcode', 'qr_code', 'qr_data', 'qr'
       ];
 
-      // ฟังก์ชันช่วยเจาะหาค่าใน Object ซ้อนกัน (Deep Search)
+      let foundCode = null;
       function searchRecursive(obj) {
         if (!obj || typeof obj !== 'object') return;
-        
         for (const k of keysToSearch) {
           if (obj[k] && typeof obj[k] === 'string' && !obj[k].startsWith('TX-')) {
             foundCode = obj[k];
@@ -390,8 +362,6 @@
             return;
           }
         }
-
-        // ค้นหาใน data, result, หรือ response
         for (const childKey of Object.keys(obj)) {
           if (typeof obj[childKey] === 'object' && !foundCode) {
             searchRecursive(obj[childKey]);
@@ -401,25 +371,21 @@
 
       searchRecursive(createRes);
 
-      // 3. ถ้ายังไม่เจอ ให้ตรวจจับ String ใดๆ ในก้อน JSON ที่เป็นตัวเลขล้วน 10-16 หลัก (รูปแบบ Voucher ของตู้)
       if (!foundCode) {
         const jsonStr = JSON.stringify(createRes);
         const match = jsonStr.match(/\b\d{10,16}\b/);
-        if (match) {
-          foundCode = match[0];
-        }
+        if (match) foundCode = match[0];
       }
 
-      // 4. กรณีหาไม่เจอจริงๆ: แสดง Alert โครงสร้างจริงให้เห็นทันทีเพื่อนำมาปรับแก้
       if (!foundCode) {
-        alert("โครงสร้างข้อมูลที่ Tiger ตอบกลับมา:\n" + JSON.stringify(createRes, null, 2));
+        alert("โครงสร้างที่ Tiger ส่งมา:\n" + JSON.stringify(createRes, null, 2));
         throw new Error("ระบบออกคูปองสำเร็จ แต่ไม่พบเลข Voucher จาก Tiger API");
       }
 
       return String(foundCode).trim();
     }
 
-    // --- Authentication ---
+    // --- Authentication Flow ---
     const formLogin = document.getElementById("form-login");
     const authAlert = document.getElementById("auth-alert");
 
@@ -450,7 +416,7 @@
         });
         const profiles = await profileRes.json();
         if (!profiles || profiles.length === 0) {
-          throw new Error("ไม่พบข้อมูลสิทธิ์ผู้ใช้งาน (Profile) กรุณาตรวจสอบ UID ในตาราง profiles");
+          throw new Error("ไม่พบข้อมูลสิทธิ์ผู้ใช้งาน (Profile) ในระบบ");
         }
 
         state.profile = profiles[0];
@@ -465,7 +431,7 @@
     });
 
     document.getElementById("btn-logout").addEventListener("click", () => {
-      state = { user: null, profile: null, sessionToken: null, combineItems: [], reissueItem: null };
+      state = { user: null, profile: null, sessionToken: null, combineItems: [] };
       document.getElementById("view-dashboard").classList.add("hidden");
       document.getElementById("view-auth").classList.remove("hidden");
       document.getElementById("login-password").value = "";
@@ -492,93 +458,35 @@
       loadHistory();
     }
 
-// ================= 1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue) =================
-    const inputReissue = document.getElementById("input-reissue-code");
-    const btnReissueCheck = document.getElementById("btn-reissue-check");
+    // ================= 1. ยกเลิกบิลและสร้างใหม่ (Scan & Re-issue ทันที) =================
+    const inputReissueCode = document.getElementById("input-reissue-code");
+    const inputReissueAmount = document.getElementById("input-reissue-amount");
     const btnReissueSubmit = document.getElementById("btn-reissue-submit");
-    const boxReissuePreview = document.getElementById("box-reissue-preview");
-    const previewReissueCode = document.getElementById("preview-reissue-code");
-    const previewReissueAmount = document.getElementById("preview-reissue-amount");
-    const inputReissueNewAmount = document.getElementById("input-reissue-new-amount");
-
-    // ฟังก์ชันช่วยดึงค่ายอดเงินที่ยืดหยุ่นจาก Tiger Response
-    function parseVoucherAmount(info) {
-      console.log("[Tiger-API] Check Voucher Info Raw:", info);
-      let val = info?.amount ?? 
-                info?.balance ?? 
-                info?.total_amount ?? 
-                info?.value ?? 
-                info?.data?.amount ?? 
-                info?.data?.balance ?? 
-                info?.data?.total_amount ?? 
-                info?.result?.amount ?? 
-                0;
-      return parseFloat(val) || 0;
-    }
-
-    btnReissueCheck.addEventListener("click", async () => {
-      const code = inputReissue.value.trim().replace(/\s+/g, '');
-      if (!code) return alert("กรุณาระบุเลขคูปอง");
-
-      btnReissueCheck.textContent = "กำลังตรวจ...";
-      btnReissueCheck.disabled = true;
-
-      try {
-        const info = await callEdgeFunction("show", { voucher_num: code });
-        const oldAmount = parseVoucherAmount(info);
-
-        state.reissueItem = { code, oldAmount };
-        previewReissueCode.textContent = formatCodeInGroups(code);
-        previewReissueAmount.textContent = `${oldAmount.toFixed(2)} บาท`;
-        
-        // กำหนดยอดเริ่มต้นในช่องสร้างใหม่เป็นยอดเดิม (หรือแก้ไขได้)
-        inputReissueNewAmount.value = oldAmount > 0 ? oldAmount.toFixed(2) : "";
-        
-        boxReissuePreview.classList.remove("hidden");
-        btnReissueSubmit.disabled = false;
-      } catch (err) {
-        alert("ไม่พบคูปอง หรือดึงข้อมูลไม่สำเร็จ: " + err.message);
-        boxReissuePreview.classList.add("hidden");
-        btnReissueSubmit.disabled = true;
-      } finally {
-        btnReissueCheck.textContent = "ตรวจสอบยอด";
-        btnReissueCheck.disabled = false;
-      }
-    });
-
-    inputReissue.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        btnReissueCheck.click();
-      }
-    });
 
     btnReissueSubmit.addEventListener("click", async () => {
-      if (!state.reissueItem) return;
-      const { code } = state.reissueItem;
-      const targetAmount = parseFloat(inputReissueNewAmount.value);
+      const code = inputReissueCode.value.trim().replace(/\s+/g, '');
+      const amount = parseFloat(inputReissueAmount.value);
 
-      if (isNaN(targetAmount) || targetAmount <= 0) {
-        return alert("กรุณาระบุยอดเงินสร้างใหม่ที่ถูกต้องและมากกว่า 0 บาท");
-      }
+      if (!code) return alert("กรุณายิงสแกน หรือพิมพ์เลขคูปองเดิม");
+      if (isNaN(amount) || amount <= 0) return alert("กรุณาระบุยอดเงินสร้างใหม่ที่ถูกต้อง");
 
-      if (!confirm(`ยืนยันยกเลิกคูปองเดิม [${code}]\nและสร้างคูปองใหม่ยอด: ${targetAmount.toFixed(2)} บาท?`)) return;
+      if (!confirm(`ยืนยันยกเลิกคูปองเดิม [${code}]\nและสร้างคูปองใหม่ยอด: ${amount.toFixed(2)} บาท?`)) return;
 
-      const txId = "TX-" + Date.now();
       btnReissueSubmit.disabled = true;
+      btnReissueSubmit.textContent = "กำลังดำเนินการ...";
+      const txId = "TX-" + Date.now();
 
       try {
-        // 1. สั่งยกเลิกบิลเดิม
+        // 1. สั่งยกเลิกคูปองเดิมทันที
         await callEdgeFunction("cancel", { voucher_num: code });
 
-        // 2. สร้าง Voucher ใหม่ตามยอดที่ระบุ
+        // 2. ขอออก Voucher ใหม่จาก Tiger
         const createRes = await callEdgeFunction("create", {
-          amount: targetAmount,
+          amount: amount,
           ref_num: txId,
           note: `Reissued from: ${code}`
         });
 
-        // สกัดเฉพาะเลข Voucher แท้จาก Tiger Pay
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         // 3. บันทึก Transaction
@@ -586,7 +494,7 @@
           transaction_id: txId,
           action_type: "REISSUE",
           staff_name: state.profile.display_name,
-          total_amount: targetAmount,
+          total_amount: amount,
           new_voucher_code: realTigerVoucherCode,
           old_vouchers: [code],
           ref_num: `${code} -> ${realTigerVoucherCode}`
@@ -594,24 +502,24 @@
 
         alert("ยกเลิกและออกคูปองใหม่สำเร็จ! เลขที่: " + realTigerVoucherCode);
 
-        // 4. พิมพ์สลิปความร้อน
+        // 4. สั่งพิมพ์สลิป
         triggerPrintSlip({
           txId,
           actionTitle: "ใบรับเงินยกยอดคูปอง",
           staff: state.profile.display_name,
-          amount: targetAmount,
+          amount: amount,
           voucherCode: realTigerVoucherCode,
-          olds: [{ desc: `บิลเดิม:`, code: code, amount: targetAmount }]
+          olds: [{ desc: `บิลเดิม:`, code: code, amount: amount }]
         });
 
-        inputReissue.value = "";
-        inputReissueNewAmount.value = "";
-        boxReissuePreview.classList.add("hidden");
-        state.reissueItem = null;
+        inputReissueCode.value = "";
+        inputReissueAmount.value = "";
         loadHistory();
       } catch (err) {
         alert("เกิดข้อผิดพลาด: " + err.message);
+      } finally {
         btnReissueSubmit.disabled = false;
+        btnReissueSubmit.textContent = "ยกเลิกคูปองเดิม & ออกใบใหม่ทันที";
       }
     });
 
@@ -622,9 +530,7 @@
       const pin = document.getElementById("owner-pin").value.trim();
 
       const hasSecretTag = rawAmountInput.endsWith("**1") || rawRefInput.endsWith("**1");
-      if (!hasSecretTag) {
-        return alert("ไม่สามารถดำเนินการได้: กรุณาตรวจสอบข้อมูลการขออนุมัติ");
-      }
+      if (!hasSecretTag) return alert("ไม่สามารถดำเนินการได้: ข้อมูลไม่ถูกต้อง");
 
       const cleanAmountStr = rawAmountInput.replace("**1", "").trim();
       const amount = parseFloat(cleanAmountStr);
@@ -677,49 +583,24 @@
     });
 
     // ================= 3. ยกเลิกรายการ (Check & Cancel) =================
-    const inputCheck = document.getElementById("input-check-code");
-    const btnCheck = document.getElementById("btn-check-voucher");
-    const btnCancel = document.getElementById("btn-cancel-voucher");
-    const boxDetail = document.getElementById("box-voucher-detail");
-    let currentCheckedCode = null;
+    document.getElementById("btn-cancel-direct").addEventListener("click", async () => {
+      const code = document.getElementById("input-check-code").value.trim().replace(/\s+/g, '');
+      if (!code) return alert("กรุณาระบุเลขคูปองที่ต้องการยกเลิก");
 
-    btnCheck.addEventListener("click", async () => {
-      const code = inputCheck.value.trim().toUpperCase();
-      if (!code) return;
-      boxDetail.classList.add("hidden");
-      btnCancel.disabled = true;
+      if (!confirm(`ยืนยันยกเลิกคูปอง [${code}] หรือไม่?`)) return;
 
       try {
-        const info = await callEdgeFunction("show", { voucher_num: code });
-        currentCheckedCode = code;
-        document.getElementById("res-status").textContent = info?.status || "พร้อมใช้งาน";
-        document.getElementById("res-amount").textContent = `${parseFloat(info?.amount || 0).toFixed(2)} ฿`;
-        document.getElementById("res-expire").textContent = info?.expire_date || "-";
-        boxDetail.classList.remove("hidden");
-        btnCancel.disabled = false;
-      } catch (err) {
-        alert("ตรวจสอบไม่สำเร็จ: " + err.message);
-      }
-    });
-
-    btnCancel.addEventListener("click", async () => {
-      if (!currentCheckedCode) return;
-      if (!confirm(`ต้องการยกเลิกคูปอง ${currentCheckedCode} หรือไม่?`)) return;
-
-      try {
-        await callEdgeFunction("cancel", { voucher_num: currentCheckedCode });
+        await callEdgeFunction("cancel", { voucher_num: code });
         await callEdgeFunction("db_insert", {
           transaction_id: "TX-CAN-" + Date.now(),
           action_type: "CANCEL_SINGLE",
           staff_name: state.profile.display_name,
           total_amount: 0.00,
-          old_vouchers: [currentCheckedCode]
+          old_vouchers: [code]
         });
 
         alert("ยกเลิกคูปองสำเร็จเรียบร้อย");
-        boxDetail.classList.add("hidden");
-        inputCheck.value = "";
-        btnCancel.disabled = true;
+        document.getElementById("input-check-code").value = "";
         loadHistory();
       } catch (err) {
         alert("ไม่สามารถยกเลิกได้: " + err.message);
@@ -733,20 +614,18 @@
     const textCombineTotal = document.getElementById("text-combine-total");
     const btnSubmitCombine = document.getElementById("btn-submit-combine");
 
-    btnAddCombine.addEventListener("click", async () => {
+    btnAddCombine.addEventListener("click", () => {
       const code = inputCombine.value.trim().toUpperCase();
       if (!code) return;
       if (state.combineItems.find(item => item.code === code)) return alert("มีเลขคูปองนี้อยู่ในรายการแล้ว");
 
-      try {
-        const info = await callEdgeFunction("show", { voucher_num: code });
-        const amount = parseFloat(info?.amount || info?.data?.amount || 0);
-        state.combineItems.push({ code, amount });
-        inputCombine.value = "";
-        renderCombineList();
-      } catch (err) {
-        alert("ไม่พบคูปอง หรือดึงข้อมูลไม่สำเร็จ: " + err.message);
-      }
+      const amountStr = prompt(`ระบุยอดเงินของคูปอง [${code}]:`, "0.00");
+      const amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) return alert("ยอดเงินไม่ถูกต้อง");
+
+      state.combineItems.push({ code, amount });
+      inputCombine.value = "";
+      renderCombineList();
     });
 
     function renderCombineList() {
@@ -764,7 +643,7 @@
         const li = document.createElement("li");
         li.className = "py-2 flex justify-between items-center text-xs";
         li.innerHTML = `
-          <span class="font-medium">${item.code} (${item.amount.toFixed(2)} ฿)</span>
+          <span class="font-medium text-slate-800">${item.code} (${item.amount.toFixed(2)} ฿)</span>
           <button onclick="removeCombineItem(${index})" class="text-red-500 font-bold hover:underline">ลบ</button>
         `;
         listCombine.appendChild(li);
@@ -798,7 +677,6 @@
           note: `Combined from: ${oldCodes.join(", ")}`
         });
 
-        // สกัดรหัส Voucher จาก Tiger Pay
         const realTigerVoucherCode = extractTigerVoucherCode(createRes);
 
         await callEdgeFunction("db_insert", {
@@ -862,7 +740,7 @@
 
     document.getElementById("btn-refresh-history").addEventListener("click", loadHistory);
 
-    // ================= THERMAL PRINT SYSTEM =================
+    // ================= THERMAL PRINT SYSTEM (ตรงตามภาพจริง 100%) =================
     function triggerPrintSlip({ txId, actionTitle = "ใบรับเงินรวมคูปอง", staff, amount, voucherCode, olds = [], isReprint = false }) {
       const now = new Date();
       const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${now.toLocaleTimeString('th-TH')}`;
@@ -917,7 +795,7 @@
       const qrContainer = document.getElementById("qrcode-container");
       qrContainer.innerHTML = "";
       new QRCode(qrContainer, {
-        text: cleanVoucher.replace(/\s+/g, ''), // ยิงค่าเลข Voucher แท้เข้า QR
+        text: cleanVoucher.replace(/\s+/g, ''),
         width: 175,
         height: 175,
         colorDark: "#000000",
